@@ -14,7 +14,8 @@
     // pool: чаша [центр x, y, полуоси] — по ней расходится рябь; drops с отрицательной длиной — брызги вверх от удара струи
     { birds: 3, dir: -1, pool: [0.66, 0.6, 0.1, 0.045], drops: [[0.655, 0.585, 0.06, -0.05], [0.655, 0.585, 0.035, -0.032]] },
     { birds: 2, dir: 1 },
-    { drops: [[0.64, 0.375, 0.035, 0.27], [0.695, 0.33, 0.02, 0.37]] },
+    // капли из ладоней: немного, крупные слезинки, по линии нарисованных капель
+    { drops: [[0.674, 0.4, 0.012, 0.24], [0.68, 0.4, 0.008, 0.24]], dropN: 7, dropSize: [9, 5] },
     { birds: 3, dir: -1 },
     { birds: 2, dir: 1 },
     { birds: 3, dir: -1, pool: [0.79, 0.65, 0.095, 0.04], drops: [[0.80, 0.62, 0.045, -0.04], [0.80, 0.62, 0.028, -0.028]] }
@@ -153,11 +154,11 @@
     for (var i = 0; i < N; i++) { seed[i * 3] = Math.random(); seed[i * 3 + 1] = Math.random(); seed[i * 3 + 2] = Math.random(); }
     var pg = new THREE.BufferGeometry();
     pg.setAttribute("position", new THREE.BufferAttribute(seed, 3));
-    var DU = { uTime: U.uTime, uPar: U.uPar, uA: { value: new THREE.Vector4() }, uB: { value: new THREE.Vector4() }, uPx: { value: 1 } };
+    var DU = { uTime: U.uTime, uPar: U.uPar, uA: { value: new THREE.Vector4() }, uB: { value: new THREE.Vector4() }, uPx: { value: 1 }, uN: { value: 1 }, uSz: { value: new THREE.Vector2(2, 2.5) } };
     var drops = new THREE.Points(pg, new THREE.ShaderMaterial({
       uniforms: DU, transparent: true, depthTest: false,
       vertexShader: [
-        "uniform float uTime; uniform vec2 uPar; uniform vec4 uA; uniform vec4 uB; uniform float uPx; varying float vA;",
+        "uniform float uTime; uniform vec2 uPar; uniform vec4 uA; uniform vec4 uB; uniform float uPx; uniform float uN; uniform vec2 uSz; varying float vA;",
         "void main(){",
         "  float life = fract(uTime * (0.45 + position.y * 0.35) + position.x);",
         "  vec4 s = position.z < 0.7 ? uA : uB;",
@@ -166,13 +167,20 @@
         "  p += uPar * 0.65;",
         "  vec2 q = (p - 0.5) * 1.035 + 0.5;",
         "  gl_Position = vec4(q.x * 2.0 - 1.0, 1.0 - q.y * 2.0, 0.0, 1.0);",
-        "  vA = smoothstep(0.0, 0.08, life) * (1.0 - smoothstep(0.6, 1.0, life));",
-        "  gl_PointSize = (2.0 + position.y * 2.5) * uPx; }"
+        "  vA = smoothstep(0.0, 0.08, life) * (1.0 - smoothstep(0.6, 1.0, life)) * step(position.z * 30.0, uN);",   // uN — сколько капель из 30 видно
+        "  gl_PointSize = (uSz.x + position.y * uSz.y) * uPx; }"
       ].join("\n"),
       fragmentShader: [
         "varying float vA;",
-        "void main(){ vec2 q = gl_PointCoord - 0.5; q.x *= 1.8;",
-        "  gl_FragColor = vec4(0.247, 0.435, 0.561, (1.0 - smoothstep(0.3, 0.5, length(q))) * vA); }"
+        // слезинка: круглое дно, острый верх, тёмный край и блик — как нарисованные капли гравюры
+        "void main(){ vec2 q = gl_PointCoord - 0.5;",
+        "  float w = q.y > 0.12 ? sqrt(max(0.0, 0.1 - (q.y - 0.12) * (q.y - 0.12))) * 0.95 : 0.3 * sqrt(clamp((q.y + 0.46) / 0.58, 0.0, 1.0));",
+        "  float inside = 1.0 - smoothstep(w - 0.06, w, abs(q.x));",
+        "  if (inside < 0.01) discard;",
+        "  float edge = smoothstep(w - 0.13, w - 0.05, abs(q.x)) + smoothstep(0.36, 0.42, q.y);",
+        "  vec3 c = mix(vec3(0.33, 0.55, 0.7), vec3(0.12, 0.22, 0.32), clamp(edge, 0.0, 1.0));",
+        "  c = mix(c, vec3(0.96), (1.0 - smoothstep(0.03, 0.08, length(q - vec2(-0.07, 0.16)))) * 0.9);",
+        "  gl_FragColor = vec4(c, inside * vA); }"
       ].join("\n")
     }));
     drops.frustumCulled = false;
@@ -297,7 +305,7 @@
         U.uPar.value.set(0.01 * sx + 0.006 * (e - 1), 0.005 * sy);   // в покое (e=1, мышь в центре) сдвига нет — совпадает со статичной картинкой
         if (it.bottle) it.bottle.style.translate = (U.uPar.value.x * 0.65 * 1.035 * it.c.clientWidth).toFixed(1) + "px " + (U.uPar.value.y * 0.65 * 1.035 * it.c.clientHeight).toFixed(1) + "px";
         drops.visible = !!cfg.drops;
-        if (cfg.drops) { DU.uA.value.fromArray(cfg.drops[0]); DU.uB.value.fromArray(cfg.drops[1] || cfg.drops[0]); }
+        if (cfg.drops) { DU.uA.value.fromArray(cfg.drops[0]); DU.uB.value.fromArray(cfg.drops[1] || cfg.drops[0]); DU.uN.value = cfg.dropN || 30; DU.uSz.value.fromArray(cfg.dropSize || [2, 2.5]); }
         renderer.render(scene, cam);
         it.ctx.drawImage(glc, 0, 0);
         if (!it.on) { it.on = true; it.el.classList.add("is-live"); }

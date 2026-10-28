@@ -1,0 +1,157 @@
+/* ГОРНЫЙ ИСТОЧНИК v2 — светлая линогравюра во весь экран. Тушь, бумага, синий только вода, красный — метки и кнопка. */
+
+@font-face{font-family:'Cormorant Garamond';font-style:normal;font-weight:300 700;font-display:swap;src:url(../fonts/CormorantGaramond-normal-300-700-cyrillic.woff2) format('woff2');unicode-range:U+0301,U+0400-045F,U+0490-0491,U+04B0-04B1,U+2116}
+@font-face{font-family:'Cormorant Garamond';font-style:normal;font-weight:300 700;font-display:swap;src:url(../fonts/CormorantGaramond-normal-300-700-latin.woff2) format('woff2');unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
+@font-face{font-family:'Manrope';font-style:normal;font-weight:200 800;font-display:swap;src:url(../fonts/Manrope-Variable.woff2) format('woff2')}
+
+:root{
+  --ink:#1d1d1d;
+  --paper:#f4f0e6;
+  --red:#c82924;
+  --blue:#3f6f8f;
+  --serif:'Cormorant Garamond',Georgia,'Times New Roman',serif;
+  --sans:'Manrope',system-ui,'Segoe UI',Arial,sans-serif;
+  --gut:clamp(16px,4.2vw,72px);
+  --ease:cubic-bezier(.2,.7,.15,1);
+}
+
+*,*::before,*::after{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;background:var(--paper)}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--sans);font-size:16px;line-height:1.5;overflow-x:clip}
+img,svg{display:block;max-width:100%}
+a{color:inherit}
+.sr{position:absolute!important;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+:focus-visible{outline:3px solid var(--ink);outline-offset:3px}
+.skip{position:fixed;z-index:80;left:12px;top:12px;padding:10px 14px;background:var(--paper);border:2px solid var(--ink);font:700 .85rem/1 var(--sans);transform:translateY(-200%)}
+.skip:focus{transform:none}
+
+/* зерно бумаги поверх всего, тонким слоем */
+.grain{position:fixed;inset:-80px;z-index:60;pointer-events:none;background:url(../assets/grain.png) 0 0/300px;opacity:.28;mix-blend-mode:multiply}
+
+/* ---------- кнопки ---------- */
+.btn{display:inline-block;background:var(--red);color:var(--paper);text-decoration:none;font:800 clamp(.8rem,.95vw,.95rem)/1 var(--sans);letter-spacing:.14em;padding:1.2em 1.7em;border:2px solid var(--ink);box-shadow:5px 5px 0 var(--ink);transition:transform .25s var(--ease),box-shadow .25s var(--ease)}
+.btn:hover{transform:translate(-2px,-2px);box-shadow:7px 7px 0 var(--ink)}
+.btn:active{transform:translate(3px,3px);box-shadow:1px 1px 0 var(--ink)}
+.btn--small{font-size:.68rem;padding:.9em 1.1em;box-shadow:3px 3px 0 var(--ink)}
+.btn--big{font-size:clamp(.88rem,1.1vw,1.05rem)}
+
+/* ---------- шапка: всегда видна, маленькая ---------- */
+.topbar{position:fixed;top:0;left:0;right:0;z-index:40;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px var(--gut);pointer-events:none;border-bottom:1px solid transparent;transition:transform .5s var(--ease),background-color .4s,border-color .4s,visibility 0s}
+.topbar>*{pointer-events:auto}
+/* после первого экрана — бумажная полоса; при прокрутке вниз прячется, при прокрутке вверх возвращается */
+.topbar.is-solid{background:rgba(244,240,230,.95);border-bottom-color:var(--ink);pointer-events:auto}
+.topbar.is-hidden{transform:translateY(-110%);visibility:hidden;transition:transform .5s var(--ease),background-color .4s,border-color .4s,visibility 0s .5s}
+.topbar__brand{display:flex;align-items:center;gap:10px;text-decoration:none;background:var(--paper);border:1.5px solid var(--ink);padding:7px 12px 7px 9px;font:700 .95rem/1 var(--serif);letter-spacing:.2em}
+.mark{width:22px;height:22px;flex:none}
+
+/* ---------- сцены: каждая на весь экран, следующая наезжает на предыдущую ---------- */
+.scene{position:sticky;top:0;height:100vh;height:100svh;overflow:hidden;background:var(--paper);container-type:size;isolation:isolate;margin-bottom:var(--dwell)}
+:root{--dwell:70vh}
+.scene+.scene{box-shadow:0 -18px 36px -18px rgba(29,29,29,.22)}
+.scene__cam{position:absolute;inset:0;transform-origin:var(--ox,50%) var(--oy,55%);will-change:transform}
+/* сцена с пропорциями кадра, накрывает экран как cover; --fx — какую часть кадра показать по горизонтали */
+.stage{--ar:1.7768;position:absolute;width:max(100cqw,calc(100cqh * var(--ar)));height:max(100cqh,calc(100cqw / var(--ar)));left:calc((100cqw - max(100cqw,calc(100cqh * var(--ar)))) * var(--fx,.5));top:calc((100cqh - max(100cqh,calc(100cqw / var(--ar)))) * var(--fy,.5))}
+.stage__img{position:absolute;inset:0;width:100%;height:100%;max-width:none;object-fit:cover;transform:scale(1.035)}   /* как живой кадр (js/live.js base()): при подмене картинка не прыгает */
+.stage__img--b{opacity:0}
+/* живая гравюра (js/live.js) поверх картинки; пока не готова — видна картинка */
+.stage__live{position:absolute;inset:0;width:100%;height:100%;opacity:0;transition:opacity .8s}
+.is-live .stage__live{opacity:1}
+.flip .stage__img--b{opacity:1}
+.scene__shade{position:absolute;inset:0;z-index:5;background:var(--ink);opacity:0;pointer-events:none;will-change:opacity}
+.scene.is-gone{visibility:hidden}
+
+/* ---------- подписи: бумажные плашки ---------- */
+.cap{position:absolute;z-index:3;margin:0;max-width:min(25rem,calc(100cqw - 2 * var(--gut)));background:var(--paper);border:1.5px solid var(--ink);box-shadow:0 0 0 5px var(--paper),0 0 0 6px var(--ink);padding:1.05em 1.3em 1.15em;font:600 clamp(1.25rem,1.9vw,1.85rem)/1.2 var(--serif);letter-spacing:.005em;text-wrap:pretty;hyphens:manual}
+.cap::before{content:"";display:block;width:2.2em;height:2px;background:var(--ink);margin-bottom:.7em}
+.cap--tl{left:var(--gut);top:clamp(84px,14cqh,150px)}
+.cap--tr{right:var(--gut);top:clamp(84px,14cqh,150px)}
+.cap--tc{left:calc(50% - min(12.5rem,50cqw - var(--gut)));top:clamp(84px,12cqh,130px)}
+.cap--bl{left:var(--gut);bottom:clamp(40px,9cqh,96px)}
+.cap--br{right:var(--gut);bottom:clamp(40px,9cqh,96px)}
+.cap--brand span{letter-spacing:.08em}
+.br-m{display:none}
+.cap--lg{font-size:clamp(1.45rem,2.4vw,2.35rem);max-width:min(29rem,calc(100cqw - 2 * var(--gut)))}
+.js .cap{opacity:0;transform:translateY(18px);clip-path:inset(0 0 100% 0);transition:opacity .9s var(--ease),transform 1.1s var(--ease),clip-path 1.1s var(--ease)}
+.js .cap.is-in{opacity:1;transform:none;clip-path:inset(-20px -20px -20px -20px);transition-delay:.25s}
+
+/* ---------- первый экран ---------- */
+.hero{position:absolute;z-index:3;left:var(--gut);top:clamp(92px,15cqh,170px);max-width:min(52rem,calc(100cqw - 2 * var(--gut)));background:var(--paper);border:1.5px solid var(--ink);box-shadow:0 0 0 6px var(--paper),0 0 0 7px var(--ink);padding:clamp(22px,2.8vw,44px) clamp(22px,3vw,48px) clamp(26px,3vw,48px)}
+.hero__kicker{margin:0 0 1.1rem;font:700 .74rem/1.4 var(--sans);letter-spacing:.18em;text-transform:uppercase}
+.hero__title{margin:0 0 clamp(1.4rem,2.4vw,2.2rem);font:700 clamp(2.4rem,4vw,4.3rem)/.96 var(--serif);letter-spacing:.005em;text-wrap:balance}
+.accent{color:var(--red)}
+.js .hero>*{opacity:0;transform:translateY(22px);animation:rise 1.1s var(--ease) forwards}
+.js .hero>:nth-child(2){animation-delay:.12s}
+.js .hero>:nth-child(3){animation-delay:.26s}
+@keyframes rise{to{opacity:1;transform:none}}
+.scroll-hint{position:absolute;z-index:3;left:50%;bottom:22px;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:6px;text-decoration:none;font:700 .68rem/1 var(--sans);letter-spacing:.2em;text-transform:uppercase;background:var(--paper);padding:8px 10px 6px;border:1.5px solid var(--ink)}
+.scroll-hint svg{width:14px;height:24px;animation:nudge 2.2s var(--ease) infinite}
+@keyframes nudge{0%,100%{transform:translateY(-2px)}50%{transform:translateY(4px)}}
+
+/* ---------- бутылка ---------- */
+.bottle{position:relative;height:var(--bh);width:calc(var(--bh) * var(--bar,.643));container-type:inline-size}
+.bottle__img{position:absolute;inset:0;width:100%;height:100%;max-width:none;object-fit:contain;mix-blend-mode:multiply}   /* белый контур пэкшота уходит в бумагу */
+.bottle__label{position:absolute;container-type:inline-size;display:flex;align-items:center;justify-content:flex-end;padding-right:6cqw;text-align:left;color:#111;visibility:hidden}
+.bottle.is-img .bottle__label,.bottle.is-img .bottle__mark{visibility:visible}
+.bottle__label small{font:600 6.4cqw/1.15 var(--sans);letter-spacing:.02em;width:44%}
+/* знак АЗAU как на бутылке: вертикально, читается снизу вверх; «АЗ» по стеклу, «AU» (золото) по золотой полосе */
+.bottle__mark{position:absolute;left:35%;top:60.2%;visibility:hidden;writing-mode:vertical-rl;transform:rotate(180deg);font:200 14.5cqw/1 var(--sans);letter-spacing:.04em;color:#111;white-space:nowrap}
+.bottle__mark b{font-weight:200}
+.bottle__mark i{font-style:normal;position:relative;left:-.3em}   /* «АЗ» ниже строки «AU»: на экране — правее (знак повёрнут на 180°) */
+/* на уступе сцены 6: координаты в долях кадра (подогнаны по scene-06.webp) */
+.scene__bottle{position:absolute;--bh:calc(var(--bot-h,.36) * 100%);height:calc(var(--bot-h,.36) * 100%);width:auto;aspect-ratio:9/14;left:calc(var(--bot-x,.33) * 100%);top:calc(var(--bot-y,.78) * 100%);transform:translate(-50%,-100%);container-type:inline-size}
+/* тень касания: плотная короткая тень ровно под дном */
+.scene__bottle::after{content:"";position:absolute;z-index:-1;left:6%;right:-4%;bottom:3.4%;height:3%;border-radius:50%;background:var(--ink);opacity:.32;filter:blur(2px)}
+
+/* ---------- финал ---------- */
+.final{position:relative;z-index:2;min-height:100vh;min-height:100svh;background:var(--paper);display:grid;place-items:center;padding:clamp(56px,6vh,80px) var(--gut);box-shadow:0 -18px 36px -18px rgba(29,29,29,.22)}
+.final__inner{display:grid;grid-template-columns:auto minmax(0,38rem);gap:clamp(28px,6vw,110px);align-items:center;max-width:72rem}
+.final__bottle{--bh:min(84svh,760px)}
+.final__sub{margin:0 0 1.2rem;font:700 .76rem/1.4 var(--sans);letter-spacing:.18em;text-transform:uppercase;color:var(--blue)}
+.final__title{margin:0 0 2rem;font:700 clamp(2rem,3.6vw,3.6rem)/1.02 var(--serif);text-wrap:balance}
+.benefits{list-style:none;margin:2.4rem 0 0;padding:1.1rem 0 0;border-top:1px solid var(--ink);display:flex;flex-wrap:wrap;gap:.4rem 0;font:700 .72rem/1.4 var(--sans);letter-spacing:.16em;text-transform:uppercase}
+.benefits li+li::before{content:"·";margin:0 .9em;color:var(--red)}
+.benefits svg{display:none}
+.js .final [data-rise],.js .final__inner>*{opacity:0;transform:translateY(26px);transition:opacity 1s var(--ease),transform 1.2s var(--ease)}
+.js .final.is-in .final__inner>*{opacity:1;transform:none}
+.js .final.is-in .final__copy{transition-delay:.18s}
+
+/* ---------- подвал (как в v1: тёмный) ---------- */
+.footer{position:relative;z-index:2;background:var(--ink);color:var(--paper);padding:56px var(--gut) 64px;text-align:center;font-size:.88rem}
+.footer p{margin:.4rem 0}
+.footer__brand{font:700 1.4rem/1 var(--serif);letter-spacing:.22em;margin-bottom:1rem!important}
+.footer__legal{opacity:.8}
+.footer :focus-visible{outline-color:var(--paper)}
+
+/* ---------- телефон ---------- */
+@media (max-width:700px){
+  .stage{left:calc((100cqw - max(100cqw,calc(100cqh * var(--ar)))) * var(--mfx,.5))}
+  .js .scene[data-mpan] .stage{left:0}
+  .topbar{padding:10px 12px}
+  .topbar__brand{font-size:.74rem;letter-spacing:.12em;padding:6px 9px 6px 7px;white-space:nowrap}
+  .topbar__brand .mark{width:18px;height:18px}
+  .topbar .btn--small{font-size:.58rem;padding:.9em .8em;letter-spacing:.08em;white-space:nowrap}
+  .hero{left:20px;right:20px;top:70px;max-width:none;box-shadow:0 0 0 4px var(--paper),0 0 0 5px var(--ink);padding:18px 18px 22px}
+  .hero__title{font-size:clamp(2rem,9vw,2.6rem);margin-bottom:1.1rem}
+  .br-m{display:inline}
+  .br-d{display:none}
+  .scroll-hint{display:none}
+  .hero__kicker{font-size:.64rem;margin-bottom:.8rem}
+  .cap{left:20px;right:auto;max-width:calc(100cqw - 48px);font-size:1.2rem;box-shadow:0 0 0 4px var(--paper),0 0 0 5px var(--ink);padding:.9em 1.05em 1em}
+  .cap{top:auto;bottom:24px}
+  .cap--mt{top:64px;bottom:auto}
+  .cap--mr{left:auto;right:20px;max-width:62%}
+  .final__inner{grid-template-columns:1fr;justify-items:center;text-align:left}
+  .final__bottle{--bh:min(50svh,400px)}
+  .benefits{flex-direction:column;gap:.5rem}
+  .benefits li+li::before{content:none}
+}
+
+/* ---------- без движения ---------- */
+@media (prefers-reduced-motion:reduce){
+  .scene{position:relative;margin-bottom:0}
+  .scene+.scene{box-shadow:none}
+  .scroll-hint svg{animation:none}
+  .topbar{transition:none}
+  .js .cap,.js .hero>*,.js .final__inner>*{opacity:1;transform:none;clip-path:none;animation:none;transition:none}
+  .btn{transition:none}
+}

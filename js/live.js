@@ -38,7 +38,8 @@
         var b = "assets/live/s" + (i + 1);
         return { plate: b + "-plate.webp", aux: b + "-aux.png", fig: f ? b + "-fig.webp" : null };
       });
-      window.GI_CLOUDS = [1, 2, 3].map(function (k) { return "assets/cloud-" + k + ".webp"; });
+      window.GI_CLOUDS = {};
+      window.GI_TOWER.CLOUDS.forEach(function (c) { window.GI_CLOUDS[c.src] = "assets/" + c.src + ".webp"; });
       init();
     });
   }
@@ -46,7 +47,7 @@
   else window.addEventListener("load", function () { setTimeout(start, 300); });
 
   function init() {
-    var L = window.GI_LIVE, LC = window.GI_CLOUDS || [];
+    var L = window.GI_LIVE, LC = window.GI_CLOUDS || {};
     if (!L || !window.THREE) return;
     var THREE = window.THREE;
     var T = window.GI_TOWER, cam = T.cam, FH = T.FH;
@@ -201,8 +202,25 @@
 
     // облака на стыках: выше всего, плывут и при подъёме камеры едут быстрее горы (они ближе)
     var cloudGeo = new THREE.PlaneGeometry(1, 1);
+    // полоса стыка; у водопада по синему бегут блики вниз, как у воды в кадрах
+    var SEAM = [
+      "uniform sampler2D tMap; uniform float uTime; uniform float uFlow; varying vec2 vS;",
+      "float h(vec2 p){ return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }",
+      "float n2(vec2 p){ vec2 i = floor(p), f = fract(p); f = f*f*(3.0-2.0*f);",
+      "  return mix(mix(h(i), h(i+vec2(1,0)), f.x), mix(h(i+vec2(0,1)), h(i+vec2(1,1)), f.x), f.y); }",
+      "void main(){ vec4 c = texture2D(tMap, vS);",
+      "  if (uFlow > 0.5) {",
+      "    float w = smoothstep(0.08, 0.2, c.b - c.r) * c.a;",
+      "    float s = n2(vec2(vS.x * 260.0, vS.y * 22.0 + uTime * 3.5));",
+      "    c.rgb = mix(c.rgb, mix(c.rgb, vec3(0.96), smoothstep(0.55, 0.85, s) * 0.85), w);",
+      "  }",
+      "  gl_FragColor = c; }"
+    ].join("\n");
     var clouds = T.CLOUDS.map(function (c) {
-      var m = new THREE.Mesh(cloudGeo, new THREE.MeshBasicMaterial({ map: BLANK, transparent: true, depthTest: false }));
+      var m = new THREE.Mesh(cloudGeo, new THREE.ShaderMaterial({
+        uniforms: { tMap: { value: BLANK }, uTime: G.uTime, uFlow: { value: c.flow ? 1 : 0 } },
+        transparent: true, depthTest: false, vertexShader: VS, fragmentShader: SEAM
+      }));
       m.scale.set(c.flip ? -c.w : c.w, c.h, 1);
       m.position.set(0.5, c.y, 0.5);
       m.renderOrder = 2; m.visible = false;
@@ -280,8 +298,8 @@
       it.t = null; it.ready = false;
     }
     clouds.forEach(function (o) {
-      var src = LC[o.c.k];
-      if (src) pic(src, function (bm) { o.m.material.map = tex(bm); o.m.material.needsUpdate = true; o.ready = true; });
+      var src = LC[o.c.src];
+      if (src) pic(src, function (bm) { o.m.material.uniforms.tMap.value = tex(bm); o.ready = true; });
     });
 
     var W = 0, H = 0;
@@ -333,8 +351,8 @@
       });
       clouds.forEach(function (o) {
         o.m.visible = o.ready && Math.abs(o.c.y - cam.y) < cam.h + o.c.h;
-        o.m.position.y = o.c.y - (cam.y - o.c.y) * 0.18;  // ближе горы: при подъёме уходит вниз быстрее
-        o.m.position.x = 0.5 + 0.015 * Math.sin(t * 0.05 + o.c.k * 2.1);
+        o.m.position.y = o.c.y - (cam.y - o.c.y) * o.c.par;   // ближе горы: при подъёме уходит вниз быстрее
+        if (o.c.src.indexOf("cloud") === 0) o.m.position.x = 0.5 + 0.015 * Math.sin(t * 0.05);   // облако плывёт, скала стоит
       });
       motes.visible = any;
       renderer.render(scene, ocam);

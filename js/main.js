@@ -37,12 +37,17 @@ window.GI_BRAND = {
 
   /* ---------- путь в гору: кадры друг над другом, камера поднимается по прокрутке ---------- */
   // мир в долях ширины кадра: x 0..1 слева направо, y снизу вверх. Кадры снизу вверх, на стыках облака.
-  var FH = 941 / 1672, GAP = 0.12;
+  var FH = 941 / 1672, GAP = 0.2;
   var FRAMES = [2, 4, 3, 5, 6].map(function (n, i) { return { n: n, y: i * (FH + GAP) }; });   // y — низ кадра
-  var TH = FRAMES.length * FH + (FRAMES.length - 1) * GAP;
-  var CLOUDS = FRAMES.slice(1).map(function (f, i) {         // на стыке: центр, ширина с запасом за края
-    return { y: f.y - GAP / 2, w: 1.24, h: 1.24 / 3 * 0.8, k: i % 3, flip: i % 2 === 1 };
+  var SKY = 0.75;                                       // чистое небо над источником — там финал
+  var TH = FRAMES.length * FH + (FRAMES.length - 1) * GAP + SKY;
+  // на стыках разные переходы (нарисовал Кодекс): скала с тропой, туман, скала, скала с водопадом от источника;
+  // над источником — облако, за ним небо с финалом. par — насколько быстрее горы едет при подъёме (ближе к камере)
+  var SEAMS = ["seam-1", "seam-2", "seam-3", "seam-4"];
+  var CLOUDS = FRAMES.slice(1).map(function (f, i) {
+    return { y: f.y - GAP / 2, w: 1.12, h: 1.12 / 3 * 0.9, src: SEAMS[i], par: i === 1 ? 0.12 : 0.05, flow: i === 3 };
   });
+  CLOUDS.push({ y: FRAMES[FRAMES.length - 1].y + FH + 0.04, w: 1.24, h: 1.24 / 3 * 0.8, src: "cloud-2", par: 0.18, flip: true });   // вход в небо
   // остановки: f — кадр, x, y — точка кадра в центре экрана (доли, y сверху), h — сколько высоты мира в кадре;
   // k — подпись и врезка (data-key), 0 — первый экран. Между остановками камера идёт сквозь облака, не стоит.
   var KEYS = [
@@ -51,15 +56,17 @@ window.GI_BRAND = {
     { f: 1, x: 0.57, y: 0.45, h: 0.5, k: 2 },
     { f: 2, x: 0.56, y: 0.45, h: 0.47, k: 3 },
     { f: 3, x: 0.55, y: 0.52, h: 0.5, k: 4 },
-    { f: 4, x: 0.5, y: 0.5, h: FH, k: 5 }
+    { f: 4, x: 0.5, y: 0.5, h: FH, k: 5 },
+    { sky: 1, k: 6 }
   ];
   var KEYS_PHONE = [
     { f: 0, x: 0.55, y: 0.5, h: 0.54, k: 0 },
     { f: 0, x: 0.58, y: 0.42, h: 0.46, k: 1 },
     { f: 1, x: 0.63, y: 0.45, h: 0.5, k: 2 },
-    { f: 2, x: 0.47, y: 0.36, h: 0.5, k: 3 },
+    { f: 2, x: 0.47, y: 0.3, h: 0.5, k: 3 },
     { f: 3, x: 0.55, y: 0.55, h: 0.52, k: 4 },
-    { f: 4, x: 0.38, y: 0.6, h: 0.52, k: 5 }
+    { f: 4, x: 0.38, y: 0.6, h: 0.52, k: 5 },
+    { sky: 1, k: 6 }
   ];
   var STEP = 1.3;                                       // экранов прокрутки между остановками
   var U = 1000;                                         // px на единицу мира в DOM-слое (дальше масштабирует transform)
@@ -68,7 +75,7 @@ window.GI_BRAND = {
   var worlds = tower.querySelectorAll(".tower__world");
   var hero = tower.querySelector(".hero");
   var hint = tower.querySelector(".scroll-hint");
-  var caps = Array.prototype.slice.call(tower.querySelectorAll(".cap[data-key], .inset[data-key]"));
+  var caps = Array.prototype.slice.call(tower.querySelectorAll(".cap[data-key], .inset[data-key], .final[data-key]"));
   var insets = Array.prototype.slice.call(tower.querySelectorAll(".inset"));
   var narrow = window.matchMedia("(max-width: 700px)");
   var cam = { x: 0.5, y: FH / 2, h: FH, w: 1, vy: 0 };
@@ -87,7 +94,7 @@ window.GI_BRAND = {
   CLOUDS.forEach(function (c) {
     var im = document.createElement("img");
     im.className = "tower__cloud";
-    im.src = "assets/cloud-" + (c.k + 1) + ".webp"; im.alt = ""; im.decoding = "async";
+    im.src = "assets/" + c.src + ".webp"; im.alt = ""; im.decoding = "async";
     im.style.cssText = "left:" + (0.5 - c.w / 2) * U + "px;top:" + top(c.y + c.h / 2) + "px;width:" + c.w * U + "px;height:" + c.h * U + "px" + (c.flip ? ";transform:scaleX(-1)" : "");
     worlds[0].appendChild(im);
   });
@@ -102,7 +109,10 @@ window.GI_BRAND = {
   function cr(a, b, c, d, t) {
     return b + 0.5 * t * (c - a + t * (2 * a - 5 * b + 4 * c - d + t * (3 * (b - c) + d - a)));
   }
-  function world(k) { var f = FRAMES[k.f]; return { x: k.x, y: f.y + (1 - k.y) * FH, h: k.h }; }
+  function world(k) {
+    if (k.sky) return { x: 0.5, y: TH - FH / 2, h: FH };
+    var f = FRAMES[k.f]; return { x: k.x, y: f.y + (1 - k.y) * FH, h: k.h };
+  }
   function target(keys, f) {                            // f — 0..n-1, место в прокрутке в «остановках»
     var n = keys.length, i = clamp(Math.floor(f), 0, n - 2), t = clamp(f - i, 0, 1);
     t = t + 0.35 * (t * t * (3 - 2 * t) - t);           // у подписи чуть медленнее, но не стоп
@@ -116,7 +126,7 @@ window.GI_BRAND = {
     // врезки: картинка кадра крупно, нужная точка — в центре рамки
     insets.forEach(function (el) {
       var at = el.getAttribute("data-at").split(",").map(Number), i = el.firstChild;
-      var w = el.clientWidth, h = el.clientHeight, iw = w * at[2], ih = iw * FH;
+      var w = el.clientWidth, h = el.clientHeight, iw = w * at[2], ih = iw * 0.75;   // врезки 4:3, как рамка
       i.style.backgroundImage = "url(" + el.getAttribute("data-src") + ")";
       i.style.width = iw + "px"; i.style.height = ih + "px";
       i.style.left = clamp(w / 2 - at[0] * iw, w - iw, 0) + "px";
@@ -164,16 +174,13 @@ window.GI_BRAND = {
     step(now);
   }
 
-  /* ---------- финал появляется по мере прокрутки ---------- */
-  function setupReveal() {
-    if (!final) return;
-    if (reduce || !("IntersectionObserver" in window)) { final.classList.add("is-in"); return; }
-    var io = new IntersectionObserver(function (entries) {
-      if (entries[0].isIntersecting) { final.classList.add("is-in"); io.disconnect(); }
-    }, { threshold: 0.4 });
-    io.observe(final);
-  }
-  var final = document.querySelector(".final");
+  /* ---------- ссылки «к бутылке»: финал внутри закреплённого экрана — прокручиваем до конца подъёма ---------- */
+  Array.prototype.forEach.call(document.querySelectorAll('a[href="#final"]'), function (a) {
+    a.addEventListener("click", function (e) {
+      e.preventDefault();
+      window.scrollTo({ top: tower.offsetTop + tower.offsetHeight - window.innerHeight, behavior: reduce ? "auto" : "smooth" });
+    });
+  });
 
   /* ---------- шапка: бумажная после первого экрана, прячется при прокрутке вниз ---------- */
   var bar = document.querySelector(".topbar"), lastY = window.scrollY;
@@ -206,7 +213,6 @@ window.GI_BRAND = {
   /* ---------- запуск ---------- */
   applyBrand();
   Array.prototype.forEach.call(document.querySelectorAll(".bottle"), setupBottle);
-  setupReveal();
   layout();
   step(performance.now());                              // первый экран сразу на месте, не ждём кадра
   narrow.addEventListener ? narrow.addEventListener("change", layout) : narrow.addListener(layout);

@@ -60,35 +60,37 @@
       <p class="cap" data-key="4">Палка осталась на&nbsp;камне.<br> Вниз он шёл налегке.</p>
       <p class="cap cap--brand cap--r" data-key="5"><span data-brand>АЯРА</span>.<br> Пей и&nbsp;иди легче.</p>
 
-      <!-- врезки крупным планом, как в комиксе: кадр, точка (доли кадра), увеличение -->
-      <div class="inset" data-key="1" data-src="assets/scene-02.webp" data-at=".585,.22,3.2" aria-hidden="true"><i></i></div>
-      <div class="inset" data-key="2" data-src="assets/scene-04.webp" data-at=".69,.19,3.6" aria-hidden="true"><i></i></div>
-      <div class="inset" data-key="3" data-src="assets/scene-03.webp" data-at=".53,.31,3.2" aria-hidden="true"><i></i></div>
-      <div class="inset" data-key="4" data-src="assets/scene-05.webp" data-at=".42,.8,3.4" aria-hidden="true"><i></i></div>
-      <div class="inset inset--l" data-key="5" data-src="assets/scene-06.webp" data-at=".79,.6,3" aria-hidden="true"><i></i></div>
+      <!-- врезки крупным планом, как в комиксе (нарисовал Кодекс): картинка, точка в центре рамки, увеличение -->
+      <div class="inset" data-key="1" data-src="assets/inset-1.webp" data-at=".5,.5,1" aria-hidden="true"><i></i></div>
+      <div class="inset" data-key="2" data-src="assets/inset-2.webp" data-at=".5,.5,1" aria-hidden="true"><i></i></div>
+      <div class="inset" data-key="3" data-src="assets/inset-3.webp" data-at=".5,.5,1" aria-hidden="true"><i></i></div>
+      <div class="inset" data-key="4" data-src="assets/inset-4.webp" data-at=".5,.5,1" aria-hidden="true"><i></i></div>
+      <div class="inset inset--l" data-key="5" data-src="assets/inset-5.webp" data-at=".5,.5,1" aria-hidden="true"><i></i></div>
+
+      <!-- финал: над источником, в чистом небе — камера поднимается к нему, а не уезжает вниз -->
+      <section class="final" id="final" data-key="6" aria-labelledby="final-title">
+        <div class="final__inner">
+          <div class="bottle final__bottle">
+            <img class="bottle__img" src="assets/bottle-azau.webp" loading="lazy" decoding="async" alt="Бутылка питьевой воды «АЯРА»">
+            <div class="bottle__label" aria-hidden="true"><small>Чистое золото Эльбруса</small></div>
+              <div class="bottle__mark" aria-hidden="true"><b>АЯРА</b></div>
+          </div>
+          <div class="final__copy">
+            <p class="final__sub">Чистое золото Эльбруса</p>
+            <h2 id="final-title" class="final__title">Вода из&nbsp;горного источника. Пьёшь&nbsp;— и&nbsp;путь становится легче.</h2>
+            <a class="btn btn--big" href="#">ПОПРОБОВАТЬ ЛЁГКОСТЬ</a>
+            <ul class="benefits">
+              <li><svg viewBox="0 0 40 40" aria-hidden="true"><path d="M3 34 L16 10 L23 21 L27 15 L37 34Z" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linejoin="round"/><path d="M16 10 L13 17 M27 15 L25 20" stroke="currentColor" stroke-width="2"/></svg>Из горного источника</li>
+              <li><svg viewBox="0 0 40 40" aria-hidden="true"><path d="M20 4 C 12 16 8 22 8 27 a12 12 0 0 0 24 0 C32 22 28 16 20 4Z" fill="#3f6f8f"/><path d="M14 27 q1 5 6 6" stroke="#f4f0e6" stroke-width="2.5" fill="none" stroke-linecap="round"/></svg>Чистый вкус</li>
+              <li><svg viewBox="0 0 40 40" aria-hidden="true"><path d="M4 34 C14 30 18 22 22 16 S 32 6 37 5" stroke="currentColor" stroke-width="2.6" fill="none" stroke-linecap="round" stroke-dasharray="6 5"/><circle cx="35" cy="7" r="4" fill="#c82924"/></svg>Лёгкость в&nbsp;каждом глотке</li>
+            </ul>
+          </div>
+        </div>
+      </section>
     </div>
   </section>
 
-  <!-- финал -->
-  <section class="final" id="final" aria-labelledby="final-title">
-    <div class="final__inner">
-      <div class="bottle final__bottle">
-        <img class="bottle__img" src="assets/bottle-azau.webp" loading="lazy" decoding="async" alt="Бутылка питьевой воды «АЯРА»">
-        <div class="bottle__label" aria-hidden="true"><small>Чистое золото Эльбруса</small></div>
-          <div class="bottle__mark" aria-hidden="true"><b>АЯРА</b></div>
-      </div>
-      <div class="final__copy">
-        <p class="final__sub">Чистое золото Эльбруса</p>
-        <h2 id="final-title" class="final__title">Вода из&nbsp;горного источника. Пьёшь&nbsp;— и&nbsp;путь становится легче.</h2>
-        <a class="btn btn--big" href="#">ПОПРОБОВАТЬ ЛЁГКОСТЬ</a>
-        <ul class="benefits">
-          <li><svg viewBox="0 0 40 40" aria-hidden="true"><path d="M3 34 L16 10 L23 21 L27 15 L37 34Z" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linejoin="round"/><path d="M16 10 L13 17 M27 15 L25 20" stroke="currentColor" stroke-width="2"/></svg>Из горного источника</li>
-          <li><svg viewBox="0 0 40 40" aria-hidden="true"><path d="M20 4 C 12 16 8 22 8 27 a12 12 0 0 0 24 0 C32 22 28 16 20 4Z" fill="#3f6f8f"/><path d="M14 27 q1 5 6 6" stroke="#f4f0e6" stroke-width="2.5" fill="none" stroke-linecap="round"/></svg>Чистый вкус</li>
-          <li><svg viewBox="0 0 40 40" aria-hidden="true"><path d="M4 34 C14 30 18 22 22 16 S 32 6 37 5" stroke="currentColor" stroke-width="2.6" fill="none" stroke-linecap="round" stroke-dasharray="6 5"/><circle cx="35" cy="7" r="4" fill="#c82924"/></svg>Лёгкость в&nbsp;каждом глотке</li>
-        </ul>
-      </div>
-    </div>
-  </section>
+
 
 </main>
 

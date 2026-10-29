@@ -46,7 +46,7 @@ a{color:inherit}
 
 /* ---------- путь в гору: кадры друг над другом, камера (js/main.js) двигает «мир» внутри закреплённого экрана ---------- */
 .tower{position:relative;height:100svh}
-.tower__stick{position:sticky;top:0;height:100vh;height:100svh;overflow:hidden;container-type:size;isolation:isolate;background:var(--paper)}
+.tower__stick{position:sticky;top:0;height:100vh;height:100svh;height:100dvh;overflow:hidden;container-type:size;isolation:isolate;background:var(--paper)}
 /* рамка страницы комикса, как у Santioni: бумажное поле и жирная линия тушью поверх всего кадра */
 .tower__stick::after{content:"";position:absolute;inset:0;z-index:4;pointer-events:none;border:clamp(8px,1.1vw,16px) solid var(--paper);box-shadow:inset 0 0 0 3px var(--ink)}
 .tower__world{position:absolute;left:0;top:0;transform-origin:0 0;will-change:transform}
@@ -56,8 +56,8 @@ a{color:inherit}
 .tower.is-live .tower__live{opacity:1}
 .tower__world--top{z-index:2;pointer-events:none}
 .hero,.scroll-hint{transition:opacity .6s var(--ease),transform .8s var(--ease)}
-.hero.is-out{opacity:0;transform:translateY(-28px);pointer-events:none}
-.scroll-hint.is-out{opacity:0;pointer-events:none}
+.hero.is-out{opacity:0;transform:translateY(-28px);pointer-events:none;visibility:hidden;transition:opacity .6s var(--ease),transform .8s var(--ease),visibility 0s .8s}
+.scroll-hint.is-out{opacity:0;pointer-events:none;visibility:hidden;transition:opacity .6s var(--ease),visibility 0s .6s}
 html:not(.js) .tower{height:auto}
 html:not(.js) .tower__stick{position:relative}
 
@@ -77,7 +77,8 @@ html:not(.js) .tower__stick{position:relative}
 .cap--brand span{letter-spacing:.08em}
 .br-m{display:none}
 .cap--lg{font-size:clamp(1.45rem,2.4vw,2.35rem);max-width:min(29rem,calc(100cqw - 2 * var(--gut)))}
-.js .cap{opacity:0;transform:translateY(18px);clip-path:inset(0 0 100% 0);transition:opacity .9s var(--ease),transform 1.1s var(--ease),clip-path 1.1s var(--ease)}
+.js .cap{opacity:0;transform:translateY(18px);clip-path:inset(0 0 100% 0);transition:opacity .2s,transform 0s .2s,clip-path 0s .2s}
+.js .cap.is-in{transition:opacity .9s var(--ease),transform 1.1s var(--ease),clip-path 1.1s var(--ease)}
 .js .cap.is-in{opacity:1;transform:none;clip-path:inset(-20px -20px -20px -20px);transition-delay:.25s}
 
 /* ---------- первый экран ---------- */
@@ -109,13 +110,17 @@ html:not(.js) .tower__stick{position:relative}
 .scene__bottle::after{content:"";position:absolute;z-index:-1;left:6%;right:-4%;bottom:3.4%;height:3%;border-radius:50%;background:var(--ink);opacity:.32;filter:blur(2px)}
 
 /* ---------- финал ---------- */
-.final{position:absolute;inset:0;z-index:3;background:var(--paper);display:grid;place-items:center;padding:clamp(56px,6vh,80px) var(--gut);overflow:hidden}
+.final{position:absolute;inset:0;z-index:3;background:linear-gradient(var(--paper) 55%,rgba(244,240,230,0));display:grid;place-items:center;padding:clamp(56px,6vh,80px) var(--gut);overflow:hidden}
 /* финал проявляется, когда камера поднялась в небо над источником (js/main.js, data-key=6) */
-.js .final{opacity:0;visibility:hidden;transition:opacity .9s var(--ease),visibility 0s .9s}
-.js .final.is-in{opacity:1;visibility:visible;transition:opacity .9s var(--ease)}
+.js .final{opacity:0;pointer-events:none;transition:opacity .9s var(--ease)}
+.js .final.is-in{opacity:1;pointer-events:auto}
+/* без JS — всё потоком: заголовок, подписи, финал */
+html:not(.js) .final{position:relative;background:var(--paper)}
+html:not(.js) .tower .cap,html:not(.js) .inset{position:static;margin:16px var(--gut)}
+html:not(.js) .hero{position:relative;left:auto;top:auto;margin:84px var(--gut) 16px}
 .final__inner{display:grid;grid-template-columns:auto minmax(0,38rem);gap:clamp(28px,6vw,110px);align-items:center;max-width:72rem}
 .final__bottle{--bh:min(84svh,760px)}
-.final__sub{margin:0 0 1.2rem;font:700 .76rem/1.4 var(--sans);letter-spacing:.18em;text-transform:uppercase;color:var(--blue)}
+.final__sub{margin:0 0 1.2rem;font:700 .76rem/1.4 var(--sans);letter-spacing:.18em;text-transform:uppercase;color:var(--ink);opacity:.72}
 .final__title{margin:0 0 2rem;font:700 clamp(2rem,3.6vw,3.6rem)/1.02 var(--serif);text-wrap:balance}
 .benefits{list-style:none;margin:2.4rem 0 0;padding:1.1rem 0 0;border-top:1px solid var(--ink);display:flex;flex-wrap:wrap;gap:.4rem 0;font:700 .72rem/1.4 var(--sans);letter-spacing:.16em;text-transform:uppercase}
 .benefits li+li::before{content:"·";margin:0 .9em;color:var(--red)}
@@ -136,7 +141,7 @@ html:not(.js) .tower__stick{position:relative}
   .topbar{padding:10px 12px}
   .topbar__brand{font-size:.74rem;letter-spacing:.12em;padding:6px 9px 6px 7px;white-space:nowrap}
   .topbar__brand .mark{width:18px;height:18px}
-  .topbar .btn--small{font-size:.58rem;padding:.9em .8em;letter-spacing:.08em;white-space:nowrap}
+  .topbar .btn--small{font-size:.68rem;padding:.9em .8em;letter-spacing:.06em;white-space:nowrap;min-height:44px;display:inline-flex;align-items:center}
   .hero{left:20px;right:20px;top:70px;max-width:none;box-shadow:0 0 0 4px var(--paper),0 0 0 5px var(--ink);padding:18px 18px 22px}
   .hero__title{font-size:clamp(2rem,9vw,2.6rem);margin-bottom:1.1rem}
   .br-m{display:inline}
@@ -145,7 +150,7 @@ html:not(.js) .tower__stick{position:relative}
   .hero__kicker{font-size:.64rem;margin-bottom:.8rem}
   .cap{left:20px;right:auto;max-width:calc(100cqw - 48px);font-size:1.2rem;box-shadow:0 0 0 4px var(--paper),0 0 0 5px var(--ink);padding:.9em 1.05em 1em}
   .tower .cap{top:auto;bottom:24px}
-  .inset,.inset--l{width:46cqw;left:auto;right:20px;bottom:auto;top:66px}
+  .inset,.inset--l{width:40cqw;left:auto;right:20px;top:auto;bottom:150px}
   .final__inner{grid-template-columns:1fr;justify-items:center;text-align:left}
   .final{padding:64px 20px 28px}
   .final__inner{gap:18px}
@@ -160,6 +165,8 @@ html:not(.js) .tower__stick{position:relative}
 @media (prefers-reduced-motion:reduce){
   .scroll-hint svg{animation:none}
   .topbar{transition:none}
-  .js .cap,.js .hero>*,.js .final__inner>*{opacity:1;transform:none;clip-path:none;animation:none;transition:none}
+  .js .cap,.js .hero>*,.js .final__inner>*{transform:none;clip-path:none;animation:none;transition:none}
+  .js .hero>*,.js .final__inner>*,.js .cap.is-in{opacity:1}
+  .inset,.inset i{transition:none}
   .btn{transition:none}
 }

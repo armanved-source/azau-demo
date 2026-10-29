@@ -266,16 +266,20 @@
       var im = new Image();
       im.decoding = "async";
       im.src = src;
-      (im.decode ? im.decode() : new Promise(function (r) { im.onload = r; }))
-        .then(function () { return window.createImageBitmap ? createImageBitmap(im, { imageOrientation: "flipY", premultiplyAlpha: "none" }) : im; })
-        .catch(function () { return im; })
+      (im.decode ? im.decode() : new Promise(function (r, e) { im.onload = r; im.onerror = e; }))
+        .then(function () { return BITMAP ? createImageBitmap(im, { imageOrientation: "flipY", premultiplyAlpha: "none" }).catch(function () { return im; }) : im; })
+        .catch(function () { return null; })                 // не загрузилась — не рисуем чёрный кадр, попробуем снова
         .then(function (bm) { queue.push([cb, bm]); });
     }
+    // Safari и старый Firefox не умеют параметры createImageBitmap (кадр лёг бы вверх ногами) — им обычная картинка
+    var BITMAP = !!window.createImageBitmap && !/^((?!chrome|android).)*safari/i.test(navigator.userAgent);
     function tex(bm) {
       var x = new THREE.Texture(bm);
       x.minFilter = THREE.LinearFilter; x.generateMipmaps = false; x.needsUpdate = true;
-      if (bm instanceof window.ImageBitmap) x.flipY = false;   // уже перевёрнут при распаковке
+      var isBm = window.ImageBitmap && bm instanceof window.ImageBitmap;
+      if (isBm) x.flipY = false;                         // уже перевёрнут при распаковке
       renderer.initTexture(x);
+      if (isBm && bm.close) { bm.close(); x.image = { width: bm.width, height: bm.height }; }   // в видеокарте — копию в памяти отпускаем
       return x;
     }
     function want(it) {
@@ -285,26 +289,33 @@
       keys.forEach(function (k) {
         pic(it.d[k], function (bm) {
           if (!it.t) return;                             // уже отпустили
+          if (!bm) { free(it, true); return; }           // сеть подвела — в следующий раз заново
           it.t[k] = tex(bm);
           if (--it.left > 0) return;
           it.u.tPlate.value = it.t.plate; it.u.tAux.value = it.t.aux; it.u.tFig.value = it.t.fig || BLANK;
           it.ready = true;
+          if (it.f.img) it.f.img.style.visibility = "hidden";   // под холстом DOM-кадр больше не нужен
         });
       });
     }
-    function free(it) {                                  // далёкий кадр на телефоне — отдаём видеопамять
-      if (!it.t || it.left > 0) return;
+    function free(it, force) {                           // далёкий кадр — отдаём видеопамять
+      if (!it.t || (it.left > 0 && !force)) return;
       ["plate", "aux", "fig"].forEach(function (k) { if (it.t[k]) it.t[k].dispose(); });
       it.t = null; it.ready = false;
+      if (it.f.img) it.f.img.style.visibility = "";
     }
     clouds.forEach(function (o) {
       var src = LC[o.c.src];
-      if (src) pic(src, function (bm) { o.m.material.uniforms.tMap.value = tex(bm); o.ready = true; });
+      if (src) pic(src, function (bm) {
+        if (!bm) return;
+        o.m.material.uniforms.tMap.value = tex(bm); o.ready = true;
+        if (o.c.img) o.c.img.style.visibility = "hidden";   // иначе DOM-облако просвечивает рядом, контур двоится
+      });
     });
 
     var W = 0, H = 0;
     function size() {
-      var phone = innerWidth < 700;
+      var phone = T.narrow.matches;
       var k = Math.min(window.devicePixelRatio || 1, phone ? 1.5 : 1.25);
       var w = Math.min(Math.round(glc.clientWidth * k), phone ? 1100 : 2000);
       var h = Math.round(w * glc.clientHeight / Math.max(1, glc.clientWidth));
@@ -315,7 +326,11 @@
     }
 
     var mx = 0, my = 0, sx = 0, sy = 0, run = 0, py = cam.y, on = false;
-    window.addEventListener("pointermove", function (e) { mx = e.clientX / innerWidth - 0.5; my = e.clientY / innerHeight - 0.5; }, { passive: true });
+    window.addEventListener("pointermove", function (e) {   // только мышь: касание пальцем не должно дёргать слои
+      if (e.pointerType && e.pointerType !== "mouse") return;
+      mx = e.clientX / innerWidth - 0.5; my = e.clientY / innerHeight - 0.5;
+    }, { passive: true });
+    var finalEl = tower.querySelector(".final");
 
     function frame(now) {
       if (lost) return;
@@ -327,7 +342,7 @@
       T.ext = true;                                      // камеру двигаем отсюда, в одном кадре с холстом
       T.step(now);
       size();
-      var t = now / 1000, phone = innerWidth < 700;
+      var t = now / 1000, phone = T.narrow.matches;
       sx += (mx - sx) * 0.05; sy += (my - sy) * 0.05;
       G.uTime.value = t;
       G.uGust.value = 0.25 + 0.75 * Math.max(0, Math.min(1, (Math.sin(t * 0.53) * 0.6 + Math.sin(t * 1.31 + 1.7) * 0.4 + 0.2) / 1.2));
@@ -342,7 +357,7 @@
       var any = false;
       frames.forEach(function (it) {
         var d = Math.abs(it.f.y + FH / 2 - cam.y);       // от центра кадра до камеры
-        if (d < FH * 3) want(it); else if (phone && d > FH * 4) free(it);
+        if (d < FH + 0.3) want(it); else if (d > 2 * (FH + 0.2)) free(it);   // держим текущий кадр и соседей
         var vis = it.ready && d < FH + cam.h / 2;
         it.bg.visible = vis;
         if (it.fg) it.fg.visible = vis;
@@ -355,6 +370,7 @@
         if (o.c.src.indexOf("cloud") === 0) o.m.position.x = 0.5 + 0.015 * Math.sin(t * 0.05);   // облако плывёт, скала стоит
       });
       motes.visible = any;
+      if (finalEl.classList.contains("is-in") && Math.abs(cam.vy) < 1e-4) return;   // под финалом и камера стоит — не рисуем зря
       renderer.render(scene, ocam);
       if (!on && any) { on = true; tower.classList.add("is-live"); }
     }
@@ -362,6 +378,8 @@
     glc.addEventListener("webglcontextlost", function (e) {   // WebGL отвалился — назад к обычным картинкам
       e.preventDefault(); lost = true; T.ext = false;
       tower.classList.remove("is-live");
+      frames.forEach(function (it) { if (it.f.img) it.f.img.style.visibility = ""; });
+      clouds.forEach(function (o) { if (o.c.img) o.c.img.style.visibility = ""; });
     });
     requestAnimationFrame(frame);
   }

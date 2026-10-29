@@ -60,10 +60,10 @@ window.GI_BRAND = {
     { sky: 1, k: 6 }
   ];
   var KEYS_PHONE = [
-    { f: 0, x: 0.55, y: 0.5, h: 0.54, k: 0 },
+    { f: 0, x: 0.55, y: 0.36, h: 0.62, k: 0 },
     { f: 0, x: 0.58, y: 0.42, h: 0.46, k: 1 },
     { f: 1, x: 0.63, y: 0.45, h: 0.5, k: 2 },
-    { f: 2, x: 0.47, y: 0.3, h: 0.5, k: 3 },
+    { f: 2, x: 0.6, y: 0.42, h: 0.58, k: 3 },
     { f: 3, x: 0.55, y: 0.55, h: 0.52, k: 4 },
     { f: 4, x: 0.38, y: 0.6, h: 0.52, k: 5 },
     { sky: 1, k: 6 }
@@ -86,15 +86,14 @@ window.GI_BRAND = {
   FRAMES.forEach(function (f, i) {
     var im = document.createElement("img");
     im.className = "tower__img";
-    im.src = "assets/scene-0" + f.n + ".webp"; im.alt = ""; im.decoding = "async";
-    if (i > 1) im.loading = "lazy";
+    im.alt = ""; im.decoding = "async"; f.img = im; f.src = "assets/scene-0" + f.n + ".webp"; f.cy = f.y + FH / 2;
     im.style.cssText = "left:0;top:" + top(f.y + FH) + "px;width:" + U + "px;height:" + FH * U + "px";
     worlds[0].appendChild(im);
   });
   CLOUDS.forEach(function (c) {
     var im = document.createElement("img");
     im.className = "tower__cloud";
-    im.src = "assets/" + c.src + ".webp"; im.alt = ""; im.decoding = "async";
+    im.alt = ""; im.decoding = "async"; c.img = im; c.url = "assets/" + c.src + ".webp"; c.cy = c.y;
     im.style.cssText = "left:" + (0.5 - c.w / 2) * U + "px;top:" + top(c.y + c.h / 2) + "px;width:" + c.w * U + "px;height:" + c.h * U + "px" + (c.flip ? ";transform:scaleX(-1)" : "");
     worlds[0].appendChild(im);
   });
@@ -105,12 +104,15 @@ window.GI_BRAND = {
   sb.style.setProperty("--bot-y", top(fb.y + (1 - bp[1]) * FH) / (TH * U));
   sb.style.setProperty("--bot-h", bp[2] * FH / TH);
 
+  // картинка DOM-мира подгружается, когда камера в полутора кадрах от неё
+  function lazyImg(o) { if (!o.img.src && Math.abs(o.cy - cam.y) < 1.6) o.img.src = o.src || o.url; }
+
   // Катмулл — Ром по точкам с равным шагом: через каждую остановку камера проходит плавно, без излома
   function cr(a, b, c, d, t) {
     return b + 0.5 * t * (c - a + t * (2 * a - 5 * b + 4 * c - d + t * (3 * (b - c) + d - a)));
   }
   function world(k) {
-    if (k.sky) return { x: 0.5, y: TH - FH / 2, h: FH };
+    if (k.sky) { var c = CLOUDS[CLOUDS.length - 1]; return { x: 0.5, y: c.y + c.h * 0.15 + FH / 2, h: FH }; }
     var f = FRAMES[k.f]; return { x: k.x, y: f.y + (1 - k.y) * FH, h: k.h };
   }
   function target(keys, f) {                            // f — 0..n-1, место в прокрутке в «остановках»
@@ -127,7 +129,6 @@ window.GI_BRAND = {
     insets.forEach(function (el) {
       var at = el.getAttribute("data-at").split(",").map(Number), i = el.firstChild;
       var w = el.clientWidth, h = el.clientHeight, iw = w * at[2], ih = iw * 0.75;   // врезки 4:3, как рамка
-      i.style.backgroundImage = "url(" + el.getAttribute("data-src") + ")";
       i.style.width = iw + "px"; i.style.height = ih + "px";
       i.style.left = clamp(w / 2 - at[0] * iw, w - iw, 0) + "px";
       i.style.top = clamp(h / 2 - at[1] * ih, h - ih, 0) + "px";
@@ -156,17 +157,23 @@ window.GI_BRAND = {
     var z = W / (w * U);
     var tf = "translate3d(" + (W / 2 - cam.x * U * z).toFixed(1) + "px," + (H / 2 - top(cam.y) * z).toFixed(1) + "px,0) scale(" + z.toFixed(5) + ")";
     for (var i = 0; i < worlds.length; i++) worlds[i].style.transform = tf;
+    FRAMES.forEach(lazyImg); CLOUDS.forEach(lazyImg);
     // подписи и врезки: видны те, у чьей остановки сейчас камера
     var near = Math.round(f), on = Math.abs(f - near) < 0.34 ? keys[near].k : -1;
     if (on !== shown) {
       shown = on;
-      caps.forEach(function (c) { c.classList.toggle("is-in", +c.getAttribute("data-key") === on); });
+      caps.forEach(function (c) {
+        var k = +c.getAttribute("data-key");
+        c.classList.toggle("is-in", k === on);
+        // врезка: картинку подгружаем на остановку раньше, чтобы к показу была готова
+        if (c.classList.contains("inset") && (k === on || k === on + 1) && !c.firstChild.style.backgroundImage) c.firstChild.style.backgroundImage = "url(" + c.getAttribute("data-src") + ")";
+      });
       hero.classList.toggle("is-out", on !== 0);
       if (hint) hint.classList.toggle("is-out", on !== 0);
     }
     return cam;
   }
-  window.GI_TOWER = { step: step, cam: cam, FRAMES: FRAMES, CLOUDS: CLOUDS, FH: FH, TH: TH, ext: false };
+  window.GI_TOWER = { step: step, cam: cam, FRAMES: FRAMES, CLOUDS: CLOUDS, FH: FH, TH: TH, narrow: narrow, ext: false };
   function loop(now) {
     requestAnimationFrame(loop);
     if (window.GI_TOWER.ext) return;                    // рисует js/live.js
@@ -175,12 +182,17 @@ window.GI_BRAND = {
   }
 
   /* ---------- ссылки «к бутылке»: финал внутри закреплённого экрана — прокручиваем до конца подъёма ---------- */
+  var finalEl = tower.querySelector(".final");
+  function toEnd(smooth) { window.scrollTo({ top: tower.offsetTop + tower.offsetHeight - window.innerHeight, behavior: smooth && !reduce ? "smooth" : "auto" }); }
   Array.prototype.forEach.call(document.querySelectorAll('a[href="#final"]'), function (a) {
     a.addEventListener("click", function (e) {
       e.preventDefault();
-      window.scrollTo({ top: tower.offsetTop + tower.offsetHeight - window.innerHeight, behavior: reduce ? "auto" : "smooth" });
+      toEnd(true);
+      finalEl.querySelector(".btn--big").focus({ preventScroll: true });
     });
   });
+  finalEl.addEventListener("focusin", function () { if (!finalEl.classList.contains("is-in")) toEnd(false); });
+  hero.addEventListener("focusin", function () { if (hero.classList.contains("is-out")) window.scrollTo(0, tower.offsetTop); });
 
   /* ---------- шапка: бумажная после первого экрана, прячется при прокрутке вниз ---------- */
   var bar = document.querySelector(".topbar"), lastY = window.scrollY;

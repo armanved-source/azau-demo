@@ -44,30 +44,36 @@ a{color:inherit}
 .topbar__brand{display:flex;align-items:center;gap:10px;text-decoration:none;background:var(--paper);border:1.5px solid var(--ink);padding:7px 12px 7px 9px;font:700 .95rem/1 var(--serif);letter-spacing:.2em}
 .mark{width:22px;height:22px;flex:none}
 
-/* ---------- сцены: каждая на весь экран, следующая наезжает на предыдущую ---------- */
-.scene{position:sticky;top:0;height:100vh;height:100svh;overflow:hidden;background:var(--paper);container-type:size;isolation:isolate;margin-bottom:var(--dwell)}
-:root{--dwell:70vh}
-.scene+.scene{box-shadow:0 -18px 36px -18px rgba(29,29,29,.22)}
-.scene__cam{position:absolute;inset:0;transform-origin:var(--ox,50%) var(--oy,55%);will-change:transform}
-/* сцена с пропорциями кадра, накрывает экран как cover; --fx — какую часть кадра показать по горизонтали */
-.stage{--ar:1.7768;position:absolute;width:max(100cqw,calc(100cqh * var(--ar)));height:max(100cqh,calc(100cqw / var(--ar)));left:calc((100cqw - max(100cqw,calc(100cqh * var(--ar)))) * var(--fx,.5));top:calc((100cqh - max(100cqh,calc(100cqw / var(--ar)))) * var(--fy,.5))}
-.stage__img{position:absolute;inset:0;width:100%;height:100%;max-width:none;object-fit:cover;transform:scale(1.035)}   /* как живой кадр (js/live.js base()): при подмене картинка не прыгает */
-.stage__img--b{opacity:0}
-/* живая гравюра (js/live.js) поверх картинки; пока не готова — видна картинка */
-.stage__live{position:absolute;inset:0;width:100%;height:100%;opacity:0;transition:opacity .8s}
-.is-live .stage__live{opacity:1}
-.flip .stage__img--b{opacity:1}
-.scene__shade{position:absolute;inset:0;z-index:5;background:var(--ink);opacity:0;pointer-events:none;will-change:opacity}
-.scene.is-gone{visibility:hidden}
+/* ---------- путь в гору: кадры друг над другом, камера (js/main.js) двигает «мир» внутри закреплённого экрана ---------- */
+.tower{position:relative;height:100svh}
+.tower__stick{position:sticky;top:0;height:100vh;height:100svh;overflow:hidden;container-type:size;isolation:isolate;background:var(--paper)}
+/* рамка страницы комикса, как у Santioni: бумажное поле и жирная линия тушью поверх всего кадра */
+.tower__stick::after{content:"";position:absolute;inset:0;z-index:4;pointer-events:none;border:clamp(8px,1.1vw,16px) solid var(--paper);box-shadow:inset 0 0 0 3px var(--ink)}
+.tower__world{position:absolute;left:0;top:0;transform-origin:0 0;will-change:transform}
+.tower__img,.tower__cloud{position:absolute;max-width:none}
+/* живая гравюра (js/live.js) поверх картинок; пока не готова — видны картинки. Бутылка — слоем выше холста */
+.tower__live{position:absolute;inset:0;width:100%;height:100%;opacity:0;transition:opacity .8s}
+.tower.is-live .tower__live{opacity:1}
+.tower__world--top{z-index:2;pointer-events:none}
+.hero,.scroll-hint{transition:opacity .6s var(--ease),transform .8s var(--ease)}
+.hero.is-out{opacity:0;transform:translateY(-28px);pointer-events:none}
+.scroll-hint.is-out{opacity:0;pointer-events:none}
+html:not(.js) .tower{height:auto}
+html:not(.js) .tower__stick{position:relative}
+
+/* врезка крупным планом: рамка тушью, выезжает у остановки и медленно наезжает */
+.inset{position:absolute;z-index:3;right:calc(var(--gut) + 8px);bottom:clamp(40px,9cqh,96px);width:clamp(180px,22cqw,340px);aspect-ratio:4/3;overflow:hidden;background:var(--paper);border:3px solid var(--ink);box-shadow:0 0 0 6px var(--paper),0 0 0 7.5px var(--ink);opacity:0;transform:translateY(30px) rotate(1.2deg);clip-path:inset(0 0 100% 0);transition:opacity .7s var(--ease),transform 1s var(--ease),clip-path 1s var(--ease)}
+.inset--l{right:auto;left:calc(var(--gut) + 8px);transform:translateY(30px) rotate(-1.2deg)}
+.inset i{position:absolute;background-size:100% 100%;transform-origin:50% 50%;transition:transform 9s linear}
+.inset.is-in{opacity:1;transform:rotate(1.2deg);clip-path:inset(-20px);transition-delay:.45s}
+.inset--l.is-in{transform:rotate(-1.2deg)}
+.inset.is-in i{transform:scale(1.08)}
 
 /* ---------- подписи: бумажные плашки ---------- */
 .cap{position:absolute;z-index:3;margin:0;max-width:min(25rem,calc(100cqw - 2 * var(--gut)));background:var(--paper);border:1.5px solid var(--ink);box-shadow:0 0 0 5px var(--paper),0 0 0 6px var(--ink);padding:1.05em 1.3em 1.15em;font:600 clamp(1.25rem,1.9vw,1.85rem)/1.2 var(--serif);letter-spacing:.005em;text-wrap:pretty;hyphens:manual}
 .cap::before{content:"";display:block;width:2.2em;height:2px;background:var(--ink);margin-bottom:.7em}
-.cap--tl{left:var(--gut);top:clamp(84px,14cqh,150px)}
-.cap--tr{right:var(--gut);top:clamp(84px,14cqh,150px)}
-.cap--tc{left:calc(50% - min(12.5rem,50cqw - var(--gut)));top:clamp(84px,12cqh,130px)}
-.cap--bl{left:var(--gut);bottom:clamp(40px,9cqh,96px)}
-.cap--br{right:var(--gut);bottom:clamp(40px,9cqh,96px)}
+.tower .cap{left:var(--gut);top:clamp(84px,14cqh,150px)}
+.tower .cap--r{left:auto;right:var(--gut)}
 .cap--brand span{letter-spacing:.08em}
 .br-m{display:none}
 .cap--lg{font-size:clamp(1.45rem,2.4vw,2.35rem);max-width:min(29rem,calc(100cqw - 2 * var(--gut)))}
@@ -124,8 +130,6 @@ a{color:inherit}
 
 /* ---------- телефон ---------- */
 @media (max-width:700px){
-  .stage{left:calc((100cqw - max(100cqw,calc(100cqh * var(--ar)))) * var(--mfx,.5))}
-  .js .scene[data-mpan] .stage{left:0}
   .topbar{padding:10px 12px}
   .topbar__brand{font-size:.74rem;letter-spacing:.12em;padding:6px 9px 6px 7px;white-space:nowrap}
   .topbar__brand .mark{width:18px;height:18px}
@@ -137,9 +141,8 @@ a{color:inherit}
   .scroll-hint{display:none}
   .hero__kicker{font-size:.64rem;margin-bottom:.8rem}
   .cap{left:20px;right:auto;max-width:calc(100cqw - 48px);font-size:1.2rem;box-shadow:0 0 0 4px var(--paper),0 0 0 5px var(--ink);padding:.9em 1.05em 1em}
-  .cap{top:auto;bottom:24px}
-  .cap--mt{top:64px;bottom:auto}
-  .cap--mr{left:auto;right:20px;max-width:62%}
+  .tower .cap{top:auto;bottom:24px}
+  .inset,.inset--l{width:46cqw;left:auto;right:20px;bottom:auto;top:66px}
   .final__inner{grid-template-columns:1fr;justify-items:center;text-align:left}
   .final__bottle{--bh:min(50svh,400px)}
   .benefits{flex-direction:column;gap:.5rem}
@@ -148,8 +151,6 @@ a{color:inherit}
 
 /* ---------- без движения ---------- */
 @media (prefers-reduced-motion:reduce){
-  .scene{position:relative;margin-bottom:0}
-  .scene+.scene{box-shadow:none}
   .scroll-hint svg{animation:none}
   .topbar{transition:none}
   .js .cap,.js .hero>*,.js .final__inner>*{opacity:1;transform:none;clip-path:none;animation:none;transition:none}

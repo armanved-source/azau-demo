@@ -211,6 +211,7 @@
       "float n2(vec2 p){ vec2 i = floor(p), f = fract(p); f = f*f*(3.0-2.0*f);",
       "  return mix(mix(h(i), h(i+vec2(1,0)), f.x), mix(h(i+vec2(0,1)), h(i+vec2(1,1)), f.x), f.y); }",
       "void main(){ vec4 c = texture2D(tMap, vS);",
+      "  c.a *= smoothstep(0.0, 0.07, vS.y) * smoothstep(1.0, 0.93, vS.y) * smoothstep(0.0, 0.03, vS.x) * smoothstep(1.0, 0.97, vS.x);",
       "  if (uFlow > 0.5) {",
       "    float w = smoothstep(0.08, 0.2, c.b - c.r) * c.a;",
       "    float s = n2(vec2(vS.x * 260.0, vS.y * 22.0 + uTime * 3.5));",
@@ -224,7 +225,7 @@
         transparent: true, depthTest: false, vertexShader: VS, fragmentShader: SEAM
       }));
       m.scale.set(c.flip ? -c.w : c.w, c.h, 1);
-      m.position.set(0.5, c.y, 0.5);
+      m.position.set(0.5 + (c.dx || 0), c.y, 0.5);
       m.renderOrder = 2; m.visible = false;
       scene.add(m);
       return { c: c, m: m, ready: false };
@@ -274,7 +275,8 @@
         .then(function (bm) { queue.push([cb, bm]); });
     }
     // Safari и старый Firefox не умеют параметры createImageBitmap (кадр лёг бы вверх ногами) — им обычная картинка
-    var BITMAP = !!window.createImageBitmap && !/^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+    var ff = navigator.userAgent.match(/Firefox\/(\d+)/);
+    var BITMAP = !!window.createImageBitmap && !/^((?!chrome|android).)*safari/i.test(navigator.userAgent) && !(ff && +ff[1] < 98);
     function tex(bm) {
       var x = new THREE.Texture(bm);
       x.minFilter = THREE.LinearFilter; x.generateMipmaps = false; x.needsUpdate = true;
@@ -284,14 +286,19 @@
       if (isBm && bm.close) { bm.close(); x.image = { width: bm.width, height: bm.height }; }   // в видеокарте — копию в памяти отпускаем
       return x;
     }
-    function want(it) {
-      if (it.t) return;
+    function want(it, now) {
+      if (it.t || now < (it.retryAt || 0)) return;
       var keys = it.d.fig ? ["plate", "aux", "fig"] : ["plate", "aux"];
+      var gen = it.gen = (it.gen || 0) + 1;
       it.t = {}; it.left = keys.length;
       keys.forEach(function (k) {
         pic(it.d[k], function (bm) {
-          if (!it.t) return;                             // уже отпустили
-          if (!bm) { free(it, true); return; }           // сеть подвела — в следующий раз заново
+          if (it.gen !== gen || !it.t) { if (bm && bm.close) bm.close(); return; }   // ответ отменённой попытки
+          if (!bm) {                                     // сеть подвела — пауза и заново
+            it.fails = (it.fails || 0) + 1; it.retryAt = now + 1000 * Math.min(8, Math.pow(2, it.fails));
+            free(it, true); return;
+          }
+          if (it.t[k]) it.t[k].dispose();
           it.t[k] = tex(bm);
           if (--it.left > 0) return;
           it.u.tPlate.value = it.t.plate; it.u.tAux.value = it.t.aux; it.u.tFig.value = it.t.fig || BLANK;
@@ -302,6 +309,7 @@
     }
     function free(it, force) {                           // далёкий кадр — отдаём видеопамять
       if (!it.t || (it.left > 0 && !force)) return;
+      it.gen = (it.gen || 0) + 1;                        // ответы, что ещё в пути, — уже не к этому кадру
       ["plate", "aux", "fig"].forEach(function (k) { if (it.t[k]) it.t[k].dispose(); });
       it.t = null; it.ready = false;
       if (it.f.img) it.f.img.style.visibility = "";
@@ -359,7 +367,7 @@
       var any = false;
       frames.forEach(function (it) {
         var d = Math.abs(it.f.y + FH / 2 - cam.y);       // от центра кадра до камеры
-        if (d < FH + 0.3) want(it); else if (d > 2 * (FH + 0.2)) free(it);   // держим текущий кадр и соседей
+        if (d < FH + 0.3) want(it, now); else if (d > 2 * (FH + 0.2)) free(it);   // держим текущий кадр и соседей
         var vis = it.ready && d < FH + cam.h / 2;
         it.bg.visible = vis;
         if (it.fg) it.fg.visible = vis;

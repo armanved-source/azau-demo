@@ -37,7 +37,7 @@ window.GI_BRAND = {
 
   /* ---------- путь в гору: кадры друг над другом, камера поднимается по прокрутке ---------- */
   // мир в долях ширины кадра: x 0..1 слева направо, y снизу вверх. Кадры снизу вверх, на стыках облака.
-  var FH = 941 / 1672, GAP = 0.2;
+  var FH = 941 / 1672, GAP = 0.28;
   var FRAMES = [2, 4, 3, 5, 6].map(function (n, i) { return { n: n, y: i * (FH + GAP) }; });   // y — низ кадра
   var SKY = 0.75;                                       // чистое небо над источником — там финал
   var TH = FRAMES.length * FH + (FRAMES.length - 1) * GAP + SKY;
@@ -45,7 +45,8 @@ window.GI_BRAND = {
   // над источником — облако, за ним небо с финалом. par — насколько быстрее горы едет при подъёме (ближе к камере)
   var SEAMS = ["seam-1", "seam-2", "seam-3", "seam-4"];
   var CLOUDS = FRAMES.slice(1).map(function (f, i) {
-    return { y: f.y - GAP / 2, w: 1.12, h: 1.12 / 3 * 0.9, src: SEAMS[i], par: i === 1 ? 0.12 : 0.05, flow: i === 3 };
+    var h = 1.12 / 3 * 0.9;
+    return { y: f.y - GAP + h / 2 - 0.01, w: 1.12, h: h, src: SEAMS[i], par: i === 1 ? 0.12 : 0.05, flow: i === 3, dx: i === 3 ? -0.025 : 0 };   // водопад — под сток источника
   });
   CLOUDS.push({ y: FRAMES[FRAMES.length - 1].y + FH + 0.04, w: 1.24, h: 1.24 / 3 * 0.8, src: "cloud-2", par: 0.18, flip: true });   // вход в небо
   // остановки: f — кадр, x, y — точка кадра в центре экрана (доли, y сверху), h — сколько высоты мира в кадре;
@@ -62,13 +63,13 @@ window.GI_BRAND = {
   var KEYS_PHONE = [
     { f: 0, x: 0.55, y: 0.36, h: 0.62, k: 0 },
     { f: 0, x: 0.58, y: 0.42, h: 0.46, k: 1 },
-    { f: 1, x: 0.63, y: 0.45, h: 0.5, k: 2 },
+    { f: 1, x: 0.5, y: 0.45, h: 0.62, k: 2 },
     { f: 2, x: 0.6, y: 0.42, h: 0.58, k: 3 },
-    { f: 3, x: 0.55, y: 0.55, h: 0.52, k: 4 },
+    { f: 3, x: 0.35, y: 0.62, h: 0.6, k: 4 },
     { f: 4, x: 0.38, y: 0.6, h: 0.52, k: 5 },
     { sky: 1, k: 6 }
   ];
-  var STEP = 1.3;                                       // экранов прокрутки между остановками
+  var STEP = [1.05, 1.1, 1.25, 1.6, 1.15, 1.0];         // экранов прокрутки на участок между остановками (глоток — дольше)
   var U = 1000;                                         // px на единицу мира в DOM-слое (дальше масштабирует transform)
   var tower = document.querySelector(".tower");
   var stick = tower.querySelector(".tower__stick");
@@ -94,7 +95,7 @@ window.GI_BRAND = {
     var im = document.createElement("img");
     im.className = "tower__cloud";
     im.alt = ""; im.decoding = "async"; c.img = im; c.url = "assets/" + c.src + ".webp"; c.cy = c.y;
-    im.style.cssText = "left:" + (0.5 - c.w / 2) * U + "px;top:" + top(c.y + c.h / 2) + "px;width:" + c.w * U + "px;height:" + c.h * U + "px" + (c.flip ? ";transform:scaleX(-1)" : "");
+    im.style.cssText = "left:" + (0.5 + (c.dx || 0) - c.w / 2) * U + "px;top:" + top(c.y + c.h / 2) + "px;width:" + c.w * U + "px;height:" + c.h * U + "px" + (c.flip ? ";transform:scaleX(-1)" : "");
     worlds[0].appendChild(im);
   });
   for (var wi = 0; wi < worlds.length; wi++) { worlds[wi].style.width = U + "px"; worlds[wi].style.height = TH * U + "px"; }
@@ -105,7 +106,10 @@ window.GI_BRAND = {
   sb.style.setProperty("--bot-h", bp[2] * FH / TH);
 
   // картинка DOM-мира подгружается, когда камера в полутора кадрах от неё
-  function lazyImg(o) { if (!o.img.src && Math.abs(o.cy - cam.y) < 1.6) o.img.src = o.src || o.url; }
+  function lazyImg(o) {
+    if (o.img.src || window.GI_TOWER.ext || Math.abs(o.cy - cam.y) > 1.6) return;
+    o.img.src = o.url || o.src;
+  }
 
   // Катмулл — Ром по точкам с равным шагом: через каждую остановку камера проходит плавно, без излома
   function cr(a, b, c, d, t) {
@@ -122,9 +126,18 @@ window.GI_BRAND = {
     return { x: cr(a.x, b.x, c.x, d.x, t), y: cr(a.y, b.y, c.y, d.y, t), h: cr(a.h, b.h, c.h, d.h, t) };
   }
 
+  // доля прокрутки 0..1 -> место в «остановках» 0..n-1 с учётом разной длины участков (STEP)
+  function toStop(p, n) {
+    var st = STEP.slice(0, n - 1), total = st.reduce(function (a, b) { return a + b; }, 0), d = p * total;
+    for (var i = 0; i < st.length; i++) { if (d <= st[i]) return i + d / st[i]; d -= st[i]; }
+    return n - 1;
+  }
+
   function layout() {
     var n = (narrow.matches ? KEYS_PHONE : KEYS).length;
-    tower.style.height = "calc(100svh + " + ((n - 1) * STEP * 100) + "svh)";
+    var sum = STEP.slice(0, n - 1).reduce(function (a, b) { return a + b; }, 0) * 100;
+    tower.style.height = "calc(100svh + " + sum + "svh)";
+    tower.style.height = "calc(100dvh + " + sum + "dvh)";
     // врезки: картинка кадра крупно, нужная точка — в центре рамки
     insets.forEach(function (el) {
       var at = el.getAttribute("data-at").split(",").map(Number), i = el.firstChild;
@@ -142,7 +155,7 @@ window.GI_BRAND = {
     if (!W || !H) return cam;                           // ещё не разложено
     var r = tower.getBoundingClientRect();
     var p = clamp(-r.top / Math.max(1, r.height - H), 0, 1);
-    var f = p * (n - 1);
+    var f = toStop(p, n);
     var g = target(keys, f);
     var dt = Math.min(0.1, Math.max(0, (now - last) / 1000)); last = now;
     var k = reduce || !dt ? 1 : 1 - Math.exp(-dt * 7);  // инерция: камера догоняет прокрутку мягко
@@ -159,7 +172,7 @@ window.GI_BRAND = {
     for (var i = 0; i < worlds.length; i++) worlds[i].style.transform = tf;
     FRAMES.forEach(lazyImg); CLOUDS.forEach(lazyImg);
     // подписи и врезки: видны те, у чьей остановки сейчас камера
-    var near = Math.round(f), on = Math.abs(f - near) < 0.34 ? keys[near].k : -1;
+    var near = Math.round(f), on = Math.abs(f - near) < (keys[near].k === 6 ? 0.6 : 0.34) ? keys[near].k : -1;
     if (on !== shown) {
       shown = on;
       caps.forEach(function (c) {
@@ -230,5 +243,6 @@ window.GI_BRAND = {
   narrow.addEventListener ? narrow.addEventListener("change", layout) : narrow.addListener(layout);
   window.addEventListener("resize", layout);
   if (bar) window.addEventListener("scroll", topbar, { passive: true });
+  if (bar) document.addEventListener("focusin", function () { bar.classList.remove("is-hidden"); });
   requestAnimationFrame(loop);
 })();

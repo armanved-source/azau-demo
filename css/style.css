@@ -59,7 +59,8 @@ a{color:inherit}
 .hero.is-out{opacity:0;transform:translateY(-28px);pointer-events:none;visibility:hidden;transition:opacity .6s var(--ease),transform .8s var(--ease),visibility 0s .8s}
 .scroll-hint.is-out{opacity:0;pointer-events:none;visibility:hidden;transition:opacity .6s var(--ease),visibility 0s .6s}
 html:not(.js) .tower{height:auto}
-html:not(.js) .tower__stick{position:relative}
+html:not(.js) .tower__stick{position:relative;height:auto;overflow:visible}
+html:not(.js) .inset,html:not(.js) .tower__world,html:not(.js) .tower__live{display:none}
 
 /* врезка крупным планом: рамка тушью, выезжает у остановки и медленно наезжает */
 .inset{position:absolute;z-index:3;right:calc(var(--gut) + 8px);bottom:clamp(40px,9cqh,96px);width:clamp(180px,22cqw,340px);aspect-ratio:4/3;overflow:hidden;background:var(--paper);border:3px solid var(--ink);box-shadow:0 0 0 6px var(--paper),0 0 0 7.5px var(--ink);opacity:0;transform:translateY(30px) rotate(1.2deg);clip-path:inset(0 0 100% 0);transition:opacity .7s var(--ease),transform 1s var(--ease),clip-path 1s var(--ease)}
@@ -107,10 +108,10 @@ html:not(.js) .tower__stick{position:relative}
 /* на уступе сцены 6: координаты в долях кадра (подогнаны по scene-06.webp) */
 .scene__bottle{position:absolute;--bh:calc(var(--bot-h,.36) * 100%);height:calc(var(--bot-h,.36) * 100%);width:auto;aspect-ratio:9/14;left:calc(var(--bot-x,.33) * 100%);top:calc(var(--bot-y,.78) * 100%);transform:translate(-50%,-100%);container-type:inline-size}
 /* тень касания: плотная короткая тень ровно под дном */
-.scene__bottle::after{content:"";position:absolute;z-index:-1;left:6%;right:-4%;bottom:3.4%;height:3%;border-radius:50%;background:var(--ink);opacity:.32;filter:blur(2px)}
+.scene__bottle::after{content:"";position:absolute;z-index:-1;left:-4%;right:-22%;bottom:2.6%;height:4.2%;border-radius:50%;background:repeating-linear-gradient(100deg,var(--ink) 0 1.2px,transparent 1.2px 4px);opacity:.55;-webkit-mask:radial-gradient(closest-side,#000 55%,transparent);mask:radial-gradient(closest-side,#000 55%,transparent)}
 
 /* ---------- финал ---------- */
-.final{position:absolute;inset:0;z-index:3;background:linear-gradient(var(--paper) 55%,rgba(244,240,230,0));display:grid;place-items:center;padding:clamp(56px,6vh,80px) var(--gut);overflow:hidden}
+.final{position:absolute;inset:0;z-index:3;background:linear-gradient(var(--paper) 55%,rgba(244,240,230,0));display:grid;place-items:center;padding:84px var(--gut) clamp(40px,6vh,80px);overflow:hidden}
 /* финал проявляется, когда камера поднялась в небо над источником (js/main.js, data-key=6) */
 .js .final{opacity:0;pointer-events:none;transition:opacity .9s var(--ease)}
 .js .final.is-in{opacity:1;pointer-events:auto}
@@ -119,7 +120,7 @@ html:not(.js) .final{position:relative;background:var(--paper)}
 html:not(.js) .tower .cap,html:not(.js) .inset{position:static;margin:16px var(--gut)}
 html:not(.js) .hero{position:relative;left:auto;top:auto;margin:84px var(--gut) 16px}
 .final__inner{display:grid;grid-template-columns:auto minmax(0,38rem);gap:clamp(28px,6vw,110px);align-items:center;max-width:72rem}
-.final__bottle{--bh:min(84svh,760px)}
+.final__bottle{--bh:min(68svh,700px)}
 .final__sub{margin:0 0 1.2rem;font:700 .76rem/1.4 var(--sans);letter-spacing:.18em;text-transform:uppercase;color:var(--ink);opacity:.72}
 .final__title{margin:0 0 2rem;font:700 clamp(2rem,3.6vw,3.6rem)/1.02 var(--serif);text-wrap:balance}
 .benefits{list-style:none;margin:2.4rem 0 0;padding:1.1rem 0 0;border-top:1px solid var(--ink);display:flex;flex-wrap:wrap;gap:.4rem 0;font:700 .72rem/1.4 var(--sans);letter-spacing:.16em;text-transform:uppercase}
@@ -130,11 +131,11 @@ html:not(.js) .hero{position:relative;left:auto;top:auto;margin:84px var(--gut) 
 .js .final.is-in .final__copy{transition-delay:.18s}
 
 /* ---------- подвал (как в v1: тёмный) ---------- */
-.footer{position:relative;z-index:2;background:var(--ink);color:var(--paper);padding:56px var(--gut) 64px;text-align:center;font-size:.88rem}
+.footer{position:relative;z-index:2;background:var(--paper);color:var(--ink);padding:40px var(--gut) 48px;text-align:center;font-size:.82rem;border-top:1px dashed var(--ink)}
 .footer p{margin:.4rem 0}
 .footer__brand{font:700 1.4rem/1 var(--serif);letter-spacing:.22em;margin-bottom:1rem!important}
 .footer__legal{opacity:.8}
-.footer :focus-visible{outline-color:var(--paper)}
+.footer :focus-visible{outline-color:var(--ink)}
 
 /* ---------- телефон ---------- */
 @media (max-width:700px){
@@ -142,7 +143,7 @@ html:not(.js) .hero{position:relative;left:auto;top:auto;margin:84px var(--gut) 
   .topbar__brand{font-size:.74rem;letter-spacing:.12em;padding:6px 9px 6px 7px;white-space:nowrap}
   .topbar__brand .mark{width:18px;height:18px}
   .topbar .btn--small{font-size:.68rem;padding:.9em .8em;letter-spacing:.06em;white-space:nowrap;min-height:44px;display:inline-flex;align-items:center}
-  .hero{left:20px;right:20px;top:70px;max-width:none;box-shadow:0 0 0 4px var(--paper),0 0 0 5px var(--ink);padding:18px 18px 22px}
+  .hero{left:20px;right:20px;top:auto;bottom:24px;max-width:none;box-shadow:0 0 0 4px var(--paper),0 0 0 5px var(--ink);padding:18px 18px 22px}
   .hero__title{font-size:clamp(2rem,9vw,2.6rem);margin-bottom:1.1rem}
   .br-m{display:inline}
   .br-d{display:none}

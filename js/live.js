@@ -34,9 +34,11 @@
   function start() {
     load("vendor/three.min.js", function () {
       if (FILE) return load("assets/live.js", init);
+      // компьютер — чёткие кадры (~3040×1710), телефон — лёгкие 1672×941 из assets/live/m/ (видеопамять)
+      var m = window.GI_TOWER.narrow.matches ? "m/" : "";
       window.GI_LIVE = FIG.map(function (f, i) {
-        var b = "assets/live/s" + (i + 1);
-        return { plate: b + "-plate.webp", aux: b + "-aux.png", fig: f ? b + "-fig.webp" : null };
+        var b = "assets/live/" + m + "s" + (i + 1);
+        return { plate: b + "-plate.webp", aux: "assets/live/s" + (i + 1) + "-aux.png", fig: f ? b + "-fig.webp" : null };
       });
       window.GI_CLOUDS = {};
       window.GI_TOWER.CLOUDS.forEach(function (c) { window.GI_CLOUDS[c.src] = "assets/" + c.src + ".webp"; });
@@ -316,8 +318,8 @@
     var W = 0, H = 0;
     function size() {
       var phone = T.narrow.matches;
-      var k = Math.min(window.devicePixelRatio || 1, phone ? 1.5 : 1.25);
-      var w = Math.min(Math.round(glc.clientWidth * k), phone ? 1100 : 2000);
+      var k = Math.min(window.devicePixelRatio || 1, 1.5);   // кадры чёткие — рисуем плотнее, но не в полный ретина-размер (нагрузка)
+      var w = Math.min(Math.round(glc.clientWidth * k), phone ? 1100 : 2560);
       var h = Math.round(w * glc.clientHeight / Math.max(1, glc.clientWidth));
       if (w === W && h === H) return;
       W = w; H = h;

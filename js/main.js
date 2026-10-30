@@ -67,9 +67,10 @@ window.GI_BRAND = {
     { f: 2, x: 0.6, y: 0.42, h: 0.58, k: 3 },
     { f: 3, x: 0.45, y: 0.55, h: 0.72, k: 4 },
     { f: 4, x: 0.4, y: 0.56, h: 0.75, k: 5 },
+    { f: 4, x: 0.8, y: 0.48, h: 0.75, k: 5 },     // телефон: чаша и посох у скалы — то, о чём подпись
     { sky: 1, k: 6 }
   ];
-  var STEP = [1.05, 1.1, 1.25, 1.6, 1.15, 1.0];         // экранов прокрутки на участок между остановками (глоток — дольше)
+  var STEP = [1.05, 1.1, 1.25, 1.6, 1.15, 1.0, 1.0];   // экранов прокрутки на участок между остановками (глоток — дольше; последний — только у телефона)
   var U = 1000;                                         // px на единицу мира в DOM-слое (дальше масштабирует transform)
   var tower = document.querySelector(".tower");
   var stick = tower.querySelector(".tower__stick");
@@ -167,7 +168,8 @@ window.GI_BRAND = {
     cam.h = h; cam.w = w;
     cam.vy = dt ? (cam.y - oy) / dt : 0;
     var z = W / (w * U);
-    if (!gulpDone && !reduce && keys[3] && Math.abs(cam.y - world(keys[3]).y) < 0.02 * FH && Math.round(f) === 3) {
+    var ky = keys[3] ? world(keys[3]).y : 0;           // глоток: камера дошла или проскочила остановку за кадр
+    if (!gulpDone && !reduce && keys[3] && Math.round(f) === 3 && cam.vy > 0 && (Math.abs(cam.y - ky) < 0.02 * FH || (oy - ky) * (cam.y - ky) < 0)) {
       gulpDone = true;
       var pf = FRAMES[2], wx = 0.66, wy = pf.y + (1 - 0.33) * FH;     // ладони старика в кадре питья (доли кадра)
       gulp(W / 2 + (wx - cam.x) * U * W / (w * U), H / 2 + (top(wy) - top(cam.y)) * W / (w * U));
@@ -176,7 +178,9 @@ window.GI_BRAND = {
     for (var i = 0; i < worlds.length; i++) worlds[i].style.transform = tf;
     FRAMES.forEach(lazyImg); CLOUDS.forEach(lazyImg);
     // подписи и врезки: видны те, у чьей остановки сейчас камера
-    var near = Math.round(f), on = Math.abs(f - near) < (keys[near].k === 6 ? 0.6 : 0.34) ? keys[near].k : -1;
+    var near = Math.round(f), on = Math.abs(f - near) < (keys[near].k === 6 ? 0.6 : keys[near].k === 4 ? 0.2 : 0.34) ? keys[near].k : -1;
+    var fa = keys[Math.floor(f)], fb = keys[Math.min(n - 1, Math.ceil(f))];
+    if (fa && fb && fa.k === fb.k) on = fa.k;          // две остановки одной подписи подряд — не мигаем
     if (on !== shown) {
       shown = on;
       caps.forEach(function (c) {

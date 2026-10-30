@@ -66,7 +66,8 @@ html:not(.js) .inset,html:not(.js) .tower__world,html:not(.js) .tower__live{disp
 .inset{position:absolute;z-index:3;right:calc(var(--gut) + 8px);bottom:clamp(40px,9cqh,96px);width:clamp(180px,22cqw,340px);aspect-ratio:4/3;overflow:hidden;background:var(--paper);border:3px solid var(--ink);box-shadow:0 0 0 6px var(--paper),0 0 0 7.5px var(--ink);opacity:0;transform:translateY(30px) rotate(1.2deg);clip-path:inset(0 0 100% 0);transition:opacity .7s var(--ease),transform 1s var(--ease),clip-path 1s var(--ease)}
 .inset--l{right:auto;left:calc(var(--gut) + 8px);transform:translateY(30px) rotate(-1.2deg)}
 .inset i{position:absolute;background-size:100% 100%;transform-origin:50% 50%;transition:transform 9s linear}
-.inset.is-in{opacity:1;transform:rotate(1.2deg);clip-path:inset(-20px);transition-delay:.45s}
+.inset{transition:opacity .15s,transform 0s .15s,clip-path 0s .15s}
+.inset.is-in{opacity:1;transform:rotate(1.2deg);clip-path:inset(-20px);transition:opacity .7s var(--ease) .45s,transform 1s var(--ease) .45s,clip-path 1s var(--ease) .45s}
 .inset--l.is-in{transform:rotate(-1.2deg)}
 .inset.is-in i{transform:scale(1.08)}
 
@@ -209,7 +210,8 @@ html:not(.js) .hero{position:relative;left:auto;right:auto;top:auto;bottom:auto;
 .sound .sound__w{stroke-dasharray:3 4}
 .sound.is-on .sound__w{stroke-dasharray:none;animation:wave 1.2s linear infinite}
 @keyframes wave{to{transform:translateX(-8px)}}
-@media (max-width:700px){.sound{left:20px;bottom:auto;top:62px;padding:7px 10px;min-height:44px;min-width:44px;justify-content:center}}
-.tower:has(.final.is-in)~.sound,body:has(.final.is-in) .sound{opacity:0;pointer-events:none}
+@media (max-width:700px){.sound{left:20px;bottom:auto;top:68px;padding:7px 10px;min-height:44px;min-width:44px;justify-content:center}}
+.sound{transition:opacity .4s,visibility 0s}
+body:has(.final.is-in) .sound{opacity:0;pointer-events:none;visibility:hidden;transition:opacity .4s,visibility 0s .4s}
 @media (prefers-reduced-motion:reduce){.js .intro{display:none}.intro__in,.intro__in::after,.sound.is-on .sound__w{animation:none}}
 

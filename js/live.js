@@ -34,7 +34,7 @@
   function start() {
     load("vendor/three.min.js", function () {
       if (FILE) return load("assets/live.js", init);
-      // компьютер — чёткие кадры (~3040×1710), телефон — лёгкие 1672×941 из assets/live/m/ (видеопамять)
+      // компьютер — чёткие кадры (2560×1440), телефон — лёгкие 1672×941 из assets/live/m/ (видеопамять)
       var m = window.GI_TOWER.narrow.matches ? "m/" : "";
       window.GI_LIVE = FIG.map(function (f, i) {
         var b = "assets/live/" + m + "s" + (i + 1);

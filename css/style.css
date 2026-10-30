@@ -202,7 +202,7 @@ html:not(.js) .hero{position:relative;left:auto;right:auto;top:auto;bottom:auto;
 .gulp.is-on i:nth-child(2){animation-delay:.15s}
 .gulp.is-on i:nth-child(3){animation-delay:.3s}
 @keyframes gulpFade{0%{opacity:0}12%{opacity:1}100%{opacity:0}}
-@keyframes gulpRing{0%{opacity:.8;transform:scale(.2)}100%{opacity:0;transform:scale(4)}}
+@keyframes gulpRing{0%{opacity:.5;transform:scale(.2,.08)}100%{opacity:0;transform:scale(3,1.1)}}
 
 /* ---------- кнопка звука ---------- */
 .sound{position:fixed;z-index:41;left:calc(var(--gut) + 8px);bottom:22px;display:flex;align-items:center;gap:8px;padding:8px 12px;background:var(--paper);color:var(--ink);border:1.5px solid var(--ink);font:700 .66rem/1 var(--sans);letter-spacing:.18em;text-transform:uppercase;cursor:pointer}

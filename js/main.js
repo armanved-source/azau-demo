@@ -171,7 +171,7 @@ window.GI_BRAND = {
     var ky = keys[3] ? world(keys[3]).y : 0;           // глоток: камера дошла или проскочила остановку за кадр
     if (!gulpDone && !reduce && keys[3] && Math.round(f) === 3 && cam.vy > 0 && (Math.abs(cam.y - ky) < 0.02 * FH || (oy - ky) * (cam.y - ky) < 0)) {
       gulpDone = true;
-      var pf = FRAMES[2], wx = 0.66, wy = pf.y + (1 - 0.33) * FH;     // ладони старика в кадре питья (доли кадра)
+      var pf = FRAMES[2], wx = 0.68, wy = pf.y + (1 - 0.62) * FH;     // чаша под ладонями: круги от капель — по воде, не по лицу
       gulp(W / 2 + (wx - cam.x) * U * W / (w * U), H / 2 + (top(wy) - top(cam.y)) * W / (w * U));
     }
     var tf = "translate3d(" + (W / 2 - cam.x * U * z).toFixed(1) + "px," + (H / 2 - top(cam.y) * z).toFixed(1) + "px,0) scale(" + z.toFixed(5) + ")";

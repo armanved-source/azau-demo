@@ -35,7 +35,7 @@
     load("vendor/three.min.js", function () {
       if (FILE) return load("assets/live.js", init);
       // компьютер — чёткие кадры (2560×1440), телефон — лёгкие 1672×941 из assets/live/m/ (видеопамять)
-      var m = window.GI_TOWER.narrow.matches ? "m/" : "";
+      var m = window.GI_TOWER.narrow.matches && (window.devicePixelRatio || 1) < 2 ? "m/" : "";   // плотный экран телефона (iPhone) — чёткие кадры
       window.GI_LIVE = FIG.map(function (f, i) {
         var b = "assets/live/" + m + "s" + (i + 1);
         return { plate: b + "-plate.webp", aux: "assets/live/s" + (i + 1) + "-aux.webp", fig: f ? b + "-fig.webp" : null };
@@ -332,8 +332,8 @@
     var W = 0, H = 0;
     function size() {
       var phone = T.narrow.matches;
-      var k = Math.min(window.devicePixelRatio || 1, 1.5);   // кадры чёткие — рисуем плотнее, но не в полный ретина-размер (нагрузка)
-      var w = Math.min(Math.round(glc.clientWidth * k), phone ? 1100 : 2560);
+      var k = Math.min(window.devicePixelRatio || 1, phone ? 2 : 1.5);   // плотнее — чётко; не в полный ретина-размер (нагрузка)
+      var w = Math.min(Math.round(glc.clientWidth * k), phone ? 1400 : 2560);
       var h = Math.round(w * glc.clientHeight / Math.max(1, glc.clientWidth));
       if (w === W && h === H) return;
       W = w; H = h;

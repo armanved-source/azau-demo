@@ -173,6 +173,7 @@ window.GI_BRAND = {
     // подписи и врезки: видны те, у чьей остановки сейчас камера
     var near = Math.round(f), on = Math.abs(f - near) < (keys[near].k === 6 ? 0.6 : 0.34) ? keys[near].k : -1;
     if (on !== shown) {
+      if (on === 3 && !reduce) gulp();                    // глоток — событие: вспышка, круги, всплеск
       shown = on;
       caps.forEach(function (c) {
         var k = +c.getAttribute("data-key");
@@ -184,6 +185,11 @@ window.GI_BRAND = {
       if (hint) hint.classList.toggle("is-out", on !== 0);
     }
     return cam;
+  }
+  var gulpEl = document.querySelector(".gulp");
+  function gulp() {
+    gulpEl.classList.remove("is-on"); void gulpEl.offsetWidth; gulpEl.classList.add("is-on");
+    if (window.GI_SOUND) window.GI_SOUND.splash();
   }
   window.GI_TOWER = { step: step, cam: cam, FRAMES: FRAMES, CLOUDS: CLOUDS, FH: FH, TH: TH, narrow: narrow, ext: false };
   function loop(now) {
@@ -243,4 +249,16 @@ window.GI_BRAND = {
   if (bar) window.addEventListener("scroll", topbar, { passive: true });
   if (bar) document.addEventListener("focusin", function () { bar.classList.remove("is-hidden"); });
   requestAnimationFrame(loop);
+
+  /* ---------- заставка ---------- */
+  var intro = document.querySelector(".intro");
+  if (intro) {
+    var t0 = Date.now(), done = false;
+    var go = function () {
+      if (done) return; done = true;
+      setTimeout(function () { intro.classList.add("is-out"); setTimeout(function () { intro.remove(); }, 900); }, reduce ? 0 : Math.max(0, 1100 - (Date.now() - t0)));
+    };
+    var first = new Image(); first.onload = first.onerror = go; first.src = "assets/scene-02.webp";
+    setTimeout(go, 3500);
+  }
 })();

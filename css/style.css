@@ -180,3 +180,35 @@ html:not(.js) .hero{position:relative;left:auto;right:auto;top:auto;bottom:auto;
   .final__sub{margin-bottom:.6rem}
   .benefits{margin-top:.8rem;padding-top:.6rem;gap:.2rem}
 }
+
+/* ---------- заставка ---------- */
+.intro{position:fixed;inset:0;z-index:90;display:none;place-items:center;background:var(--ink);color:var(--paper);transition:opacity .8s var(--ease)}
+.js .intro{display:grid}
+.intro.is-out{opacity:0;pointer-events:none}
+.intro__in{text-align:center;animation:introIn 1s var(--ease) both}
+.intro__brand{margin:0;font:700 clamp(2.6rem,7vw,5rem)/1 var(--serif);letter-spacing:.3em;padding-left:.3em}
+.intro__line{margin:.9rem 0 0;font:700 .72rem/1 var(--sans);letter-spacing:.32em;text-transform:uppercase;opacity:.75}
+.intro__in::after{content:"";display:block;width:3.2rem;height:2px;margin:1.2rem auto 0;background:var(--red);transform-origin:left;animation:introBar 1.1s var(--ease) .2s both}
+@keyframes introIn{from{opacity:0;transform:translateY(12px)}}
+@keyframes introBar{from{transform:scaleX(0)}}
+
+/* ---------- глоток: вспышка холодной воды и расходящиеся круги ---------- */
+.gulp{position:fixed;inset:0;z-index:45;pointer-events:none;display:grid;place-items:center;opacity:0}
+.gulp::before{content:"";position:absolute;inset:0;background:radial-gradient(circle at 55% 40%,rgba(244,240,230,.95),rgba(244,240,230,.55) 45%,rgba(244,240,230,0) 75%)}
+.gulp i{position:absolute;left:55%;top:40%;width:20vmin;height:20vmin;margin:-10vmin;border-radius:50%;border:2px solid var(--blue);opacity:0}
+.gulp.is-on{animation:gulpFade 1.3s ease-out both}
+.gulp.is-on i{animation:gulpRing 1.4s cubic-bezier(.2,.7,.3,1) both}
+.gulp.is-on i:nth-child(2){animation-delay:.15s}
+.gulp.is-on i:nth-child(3){animation-delay:.3s}
+@keyframes gulpFade{0%{opacity:0}12%{opacity:1}100%{opacity:0}}
+@keyframes gulpRing{0%{opacity:.8;transform:scale(.2)}100%{opacity:0;transform:scale(4)}}
+
+/* ---------- кнопка звука ---------- */
+.sound{position:fixed;z-index:41;right:calc(var(--gut) + 8px);bottom:22px;display:flex;align-items:center;gap:8px;padding:8px 12px;background:var(--paper);color:var(--ink);border:1.5px solid var(--ink);font:700 .66rem/1 var(--sans);letter-spacing:.18em;text-transform:uppercase;cursor:pointer}
+.sound svg{width:26px;height:16px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round}
+.sound .sound__w{stroke-dasharray:3 4}
+.sound.is-on .sound__w{stroke-dasharray:none;animation:wave 1.2s linear infinite}
+@keyframes wave{to{transform:translateX(-8px)}}
+@media (max-width:700px){.sound{right:auto;left:20px;bottom:auto;top:62px;padding:7px 10px}.sound span{display:none}}
+@media (prefers-reduced-motion:reduce){.intro__in,.intro__in::after,.sound.is-on .sound__w{animation:none}}
+

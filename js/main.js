@@ -46,7 +46,7 @@ window.GI_BRAND = {
   var SEAMS = ["seam-1", "seam-2", "seam-3", "seam-4"];
   var CLOUDS = FRAMES.slice(1).map(function (f, i) {
     var h = 1.12 / 3 * (i === 1 ? 0.7 : 0.9);         // туман ниже — без долгой пустоты
-    return { y: f.y - GAP + h / 2 - 0.01, w: 1.12, h: h, src: SEAMS[i], par: i === 1 ? 0.12 : 0.05, flow: i === 3, dx: i === 3 ? -0.025 : 0 };   // водопад — под сток источника
+    return { y: f.y - GAP + h / 2 - (i === 2 ? 0.05 : 0.01), w: 1.12, h: h, src: SEAMS[i], par: i === 1 ? 0.12 : 0.05, flow: i === 3, dx: i === 3 ? -0.025 : 0 };   // водопад — под сток источника
   });
   CLOUDS.push({ y: FRAMES[FRAMES.length - 1].y + FH + 0.04, w: 1.24, h: 1.24 / 3 * 0.8, src: "cloud-2", par: 0.18, flip: true });   // вход в небо
   // остановки: f — кадр, x, y — точка кадра в центре экрана (доли, y сверху), h — сколько высоты мира в кадре;
@@ -66,7 +66,7 @@ window.GI_BRAND = {
     { f: 1, x: 0.57, y: 0.45, h: 0.74, k: 2 },
     { f: 2, x: 0.6, y: 0.42, h: 0.58, k: 3 },
     { f: 3, x: 0.45, y: 0.55, h: 0.72, k: 4 },
-    { f: 4, x: 0.42, y: 0.56, h: 0.6, k: 5 },
+    { f: 4, x: 0.4, y: 0.56, h: 0.75, k: 5 },
     { sky: 1, k: 6 }
   ];
   var STEP = [1.05, 1.1, 1.25, 1.6, 1.15, 1.0];         // экранов прокрутки на участок между остановками (глоток — дольше)
@@ -167,13 +167,17 @@ window.GI_BRAND = {
     cam.h = h; cam.w = w;
     cam.vy = dt ? (cam.y - oy) / dt : 0;
     var z = W / (w * U);
+    if (!gulpDone && !reduce && keys[3] && Math.abs(cam.y - world(keys[3]).y) < 0.02 * FH && Math.round(f) === 3) {
+      gulpDone = true;
+      var pf = FRAMES[2], wx = 0.66, wy = pf.y + (1 - 0.33) * FH;     // ладони старика в кадре питья (доли кадра)
+      gulp(W / 2 + (wx - cam.x) * U * W / (w * U), H / 2 + (top(wy) - top(cam.y)) * W / (w * U));
+    }
     var tf = "translate3d(" + (W / 2 - cam.x * U * z).toFixed(1) + "px," + (H / 2 - top(cam.y) * z).toFixed(1) + "px,0) scale(" + z.toFixed(5) + ")";
     for (var i = 0; i < worlds.length; i++) worlds[i].style.transform = tf;
     FRAMES.forEach(lazyImg); CLOUDS.forEach(lazyImg);
     // подписи и врезки: видны те, у чьей остановки сейчас камера
     var near = Math.round(f), on = Math.abs(f - near) < (keys[near].k === 6 ? 0.6 : 0.34) ? keys[near].k : -1;
     if (on !== shown) {
-      if (on === 3 && !reduce) gulp();                    // глоток — событие: вспышка, круги, всплеск
       shown = on;
       caps.forEach(function (c) {
         var k = +c.getAttribute("data-key");
@@ -187,7 +191,9 @@ window.GI_BRAND = {
     return cam;
   }
   var gulpEl = document.querySelector(".gulp");
-  function gulp() {
+  var gulpDone = false;
+  function gulp(x, y) {
+    gulpEl.style.setProperty("--gx", Math.round(x) + "px"); gulpEl.style.setProperty("--gy", Math.round(y) + "px");
     gulpEl.classList.remove("is-on"); void gulpEl.offsetWidth; gulpEl.classList.add("is-on");
     if (window.GI_SOUND) window.GI_SOUND.splash();
   }

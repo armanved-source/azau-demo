@@ -38,7 +38,7 @@
       var m = window.GI_TOWER.narrow.matches ? "m/" : "";
       window.GI_LIVE = FIG.map(function (f, i) {
         var b = "assets/live/" + m + "s" + (i + 1);
-        return { plate: b + "-plate.webp", aux: "assets/live/s" + (i + 1) + "-aux.png", fig: f ? b + "-fig.webp" : null };
+        return { plate: b + "-plate.webp", aux: "assets/live/s" + (i + 1) + "-aux.webp", fig: f ? b + "-fig.webp" : null };
       });
       window.GI_CLOUDS = {};
       window.GI_TOWER.CLOUDS.forEach(function (c) { window.GI_CLOUDS[c.src] = "assets/" + c.src + ".webp"; });

@@ -204,3 +204,13 @@ html:not(.js) .hero{position:relative;left:auto;right:auto;top:auto;bottom:auto;
 
 @media (prefers-reduced-motion:reduce){.js .intro{display:none}.intro__in,.intro__in::after{animation:none}}
 
+/* ---------- кнопка музыки ---------- */
+.music{position:fixed;z-index:41;left:calc(var(--gut) + 8px);bottom:22px;display:flex;align-items:center;gap:8px;padding:8px 12px;background:var(--paper);color:var(--ink);border:1.5px solid var(--ink);font:700 .66rem/1 var(--sans);letter-spacing:.18em;text-transform:uppercase;cursor:pointer;transition:opacity .4s,visibility 0s}
+.music svg{width:26px;height:16px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round}
+.music .music__w{stroke-dasharray:3 4}
+.music.is-on .music__w{stroke-dasharray:none;animation:wave 1.2s linear infinite}
+@keyframes wave{to{transform:translateX(-8px)}}
+body:has(.final.is-in) .music{opacity:0;pointer-events:none;visibility:hidden;transition:opacity .4s,visibility 0s .4s}
+@media (max-width:700px){.music{left:20px;bottom:auto;top:68px;padding:7px 10px;min-height:44px}}
+@media (prefers-reduced-motion:reduce){.music.is-on .music__w{animation:none}}
+

@@ -71,6 +71,9 @@
       "float fbm(vec2 p){ return 0.55*n2(p) + 0.3*n2(p*2.1+3.7) + 0.15*n2(p*4.3+1.3); }",
       "const vec3 PAPER = vec3(0.957, 0.941, 0.902); const vec3 INK = vec3(0.114); const vec3 BLUE = vec3(0.247, 0.435, 0.561);",
       "vec2 base(vec2 s){ return vec2(s.x, 1.0 - s.y); }",   // uv кадра -> доли кадра, y вниз
+      "float edge(vec2 s){ float a = 0.035 + 0.035 * n2(vec2(s.x * 11.0, 1.7)) + 0.012 * n2(vec2(s.x * 57.0, 4.1));",
+      "  float b = 0.035 + 0.035 * n2(vec2(s.x * 13.0, 8.3)) + 0.012 * n2(vec2(s.x * 61.0, 2.9));",
+      "  return smoothstep(0.0, a, 1.0 - s.y) * smoothstep(0.0, b, s.y); }",
       // ветер: гнёт по карте ветра (A), сильнее в порыв, волной вдоль кадра
       "vec2 wind(vec2 p, float f){",
       "  float w = uTime * 2.0 + 0.35 * sin(uTime * 0.53) + p.y * 34.0 + p.x * 9.0;",
@@ -130,7 +133,7 @@
       "  float b = 0.0; vec2 sp = base(vS);",
       "  for (int k = 0; k < 3; k++) if (float(k) < uBirds) b = max(b, bird(sp, float(k)));",
       "  c = mix(c, INK, b * (1.0 - smoothstep(0.4, 0.62, a.r)));",
-      "  gl_FragColor = vec4(c, 1.0); }"
+      "  gl_FragColor = vec4(c, edge(vS)); }"
     ].join("\n");
     var FG = [
       "uniform sampler2D tFig; uniform sampler2D tAux; varying vec2 vS;", COMMON,
@@ -139,7 +142,7 @@
       "  p += wind(p, tx(tAux, p).a);",
       "  vec4 f = tx(tFig, p);",
       "  if (f.a < 0.004) discard;",
-      "  gl_FragColor = vec4(flow(f.rgb, tx(tAux, p).b, p, 1.6), f.a); }"
+      "  gl_FragColor = vec4(flow(f.rgb, tx(tAux, p).b, p, 1.6), f.a * edge(vS)); }"
     ].join("\n");
     // капли: позиция по времени прямо в шейдере; координаты кадра -> мир
     var DVS = [
@@ -182,7 +185,7 @@
         uBirds: { value: cfg.birds || 0 }, uDir: { value: cfg.dir || 1 }, uSeed: { value: n * 1.7 },
         uPool: { value: new THREE.Vector4().fromArray(cfg.pool || [0, 0, 0, 0]) }
       };
-      var bg = new THREE.Mesh(quad, new THREE.ShaderMaterial({ uniforms: u, vertexShader: VS, fragmentShader: BG }));
+      var bg = new THREE.Mesh(quad, new THREE.ShaderMaterial({ uniforms: u, vertexShader: VS, fragmentShader: BG, transparent: true }));
       bg.position.set(0.5, f.y + FH / 2, 0);
       var it = { f: f, d: d, u: u, bg: bg, fg: null, drops: null, t: null, ready: false };
       if (d.fig) {
@@ -295,7 +298,8 @@
         pic(it.d[k], function (bm) {
           if (it.gen !== gen || !it.t) { if (bm && bm.close) bm.close(); return; }   // ответ отменённой попытки
           if (!bm) {                                     // сеть подвела — пауза и заново
-            it.fails = (it.fails || 0) + 1; it.retryAt = now + 1000 * Math.min(8, Math.pow(2, it.fails));
+            it.fails = (it.fails || 0) + 1; it.retryAt = performance.now() + 1000 * Math.min(8, Math.pow(2, it.fails));
+            if (it.f.img && !it.f.img.src) it.f.img.src = it.f.src;   // пока WebGL не смог — видна обычная картинка
             free(it, true); return;
           }
           if (it.t[k]) it.t[k].dispose();
@@ -316,11 +320,14 @@
     }
     clouds.forEach(function (o) {
       var src = LC[o.c.src];
-      if (src) pic(src, function (bm) {
-        if (!bm) return;
+      if (src) o.load = function () {
+        o.req = true;
+        pic(src, function (bm) {
+        if (!bm) { if (o.c.img && !o.c.img.src) o.c.img.src = o.c.url; return; }   // не загрузилось — запасная картинка
         o.m.material.uniforms.tMap.value = tex(bm); o.ready = true;
         if (o.c.img) o.c.img.style.visibility = "hidden";   // иначе DOM-облако просвечивает рядом, контур двоится
-      });
+        });
+      };
     });
 
     var W = 0, H = 0;
@@ -375,6 +382,7 @@
         any = any || vis;
       });
       clouds.forEach(function (o) {
+        if (!o.req && o.load && Math.abs(o.c.y - cam.y) < 1.5) o.load();   // облака — по мере подъёма, не все сразу
         o.m.visible = o.ready && Math.abs(o.c.y - cam.y) < cam.h + o.c.h;
         o.m.position.y = o.c.y - (cam.y - o.c.y) * o.c.par;   // ближе горы: при подъёме уходит вниз быстрее
         if (o.c.src.indexOf("cloud") === 0) o.m.position.x = 0.5 + 0.015 * Math.sin(t * 0.05);   // облако плывёт, скала стоит

@@ -59,7 +59,7 @@ a{color:inherit}
 .hero.is-out{opacity:0;transform:translateY(-28px);pointer-events:none;visibility:hidden;transition:opacity .6s var(--ease),transform .8s var(--ease),visibility 0s .8s}
 .scroll-hint.is-out{opacity:0;pointer-events:none;visibility:hidden;transition:opacity .6s var(--ease),visibility 0s .6s}
 html:not(.js) .tower{height:auto}
-html:not(.js) .tower__stick{position:relative;height:auto;overflow:visible}
+html:not(.js) .tower__stick{position:relative;height:auto;overflow:visible;container-type:normal}
 html:not(.js) .inset,html:not(.js) .tower__world,html:not(.js) .tower__live{display:none}
 
 /* врезка крупным планом: рамка тушью, выезжает у остановки и медленно наезжает */
@@ -118,7 +118,7 @@ html:not(.js) .inset,html:not(.js) .tower__world,html:not(.js) .tower__live{disp
 /* без JS — всё потоком: заголовок, подписи, финал */
 html:not(.js) .final{position:relative;background:var(--paper)}
 html:not(.js) .tower .cap,html:not(.js) .inset{position:static;margin:16px var(--gut)}
-html:not(.js) .hero{position:relative;left:auto;top:auto;margin:84px var(--gut) 16px}
+html:not(.js) .hero{position:relative;left:auto;right:auto;top:auto;bottom:auto;margin:84px var(--gut) 16px}
 .final__inner{display:grid;grid-template-columns:auto minmax(0,38rem);gap:clamp(28px,6vw,110px);align-items:center;max-width:72rem}
 .final__bottle{--bh:min(68svh,700px)}
 .final__sub{margin:0 0 1.2rem;font:700 .76rem/1.4 var(--sans);letter-spacing:.18em;text-transform:uppercase;color:var(--ink);opacity:.72}
@@ -170,4 +170,13 @@ html:not(.js) .hero{position:relative;left:auto;top:auto;margin:84px var(--gut) 
   .js .hero>*,.js .final__inner>*,.js .cap.is-in{opacity:1}
   .inset,.inset i{transition:none}
   .btn{transition:none}
+}
+
+/* ---------- низкий телефон (320×568): финал помещается целиком ---------- */
+@media (max-width:700px) and (max-height:620px){
+  .final{padding:56px 16px 16px}
+  .final__bottle{--bh:min(26svh,220px)}
+  .final__title{font-size:1.45rem;margin-bottom:.8rem}
+  .final__sub{margin-bottom:.6rem}
+  .benefits{margin-top:.8rem;padding-top:.6rem;gap:.2rem}
 }

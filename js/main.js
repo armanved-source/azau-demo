@@ -45,7 +45,7 @@ window.GI_BRAND = {
   // над источником — облако, за ним небо с финалом. par — насколько быстрее горы едет при подъёме (ближе к камере)
   var SEAMS = ["seam-1", "seam-2", "seam-3", "seam-4"];
   var CLOUDS = FRAMES.slice(1).map(function (f, i) {
-    var h = 1.12 / 3 * 0.9;
+    var h = 1.12 / 3 * (i === 1 ? 0.7 : 0.9);         // туман ниже — без долгой пустоты
     return { y: f.y - GAP + h / 2 - 0.01, w: 1.12, h: h, src: SEAMS[i], par: i === 1 ? 0.12 : 0.05, flow: i === 3, dx: i === 3 ? -0.025 : 0 };   // водопад — под сток источника
   });
   CLOUDS.push({ y: FRAMES[FRAMES.length - 1].y + FH + 0.04, w: 1.24, h: 1.24 / 3 * 0.8, src: "cloud-2", par: 0.18, flip: true });   // вход в небо
@@ -63,10 +63,10 @@ window.GI_BRAND = {
   var KEYS_PHONE = [
     { f: 0, x: 0.55, y: 0.36, h: 0.62, k: 0 },
     { f: 0, x: 0.58, y: 0.42, h: 0.46, k: 1 },
-    { f: 1, x: 0.5, y: 0.45, h: 0.62, k: 2 },
+    { f: 1, x: 0.57, y: 0.45, h: 0.74, k: 2 },
     { f: 2, x: 0.6, y: 0.42, h: 0.58, k: 3 },
-    { f: 3, x: 0.35, y: 0.62, h: 0.6, k: 4 },
-    { f: 4, x: 0.38, y: 0.6, h: 0.52, k: 5 },
+    { f: 3, x: 0.45, y: 0.55, h: 0.72, k: 4 },
+    { f: 4, x: 0.42, y: 0.56, h: 0.6, k: 5 },
     { sky: 1, k: 6 }
   ];
   var STEP = [1.05, 1.1, 1.25, 1.6, 1.15, 1.0];         // экранов прокрутки на участок между остановками (глоток — дольше)
@@ -107,7 +107,7 @@ window.GI_BRAND = {
 
   // картинка DOM-мира подгружается, когда камера в полутора кадрах от неё
   function lazyImg(o) {
-    if (o.img.src || window.GI_TOWER.ext || Math.abs(o.cy - cam.y) > 1.6) return;
+    if (o.img.src || window.GI_TOWER.ext || Math.abs(o.cy - cam.y) > 0.9) return;
     o.img.src = o.url || o.src;
   }
 
@@ -137,7 +137,6 @@ window.GI_BRAND = {
     var n = (narrow.matches ? KEYS_PHONE : KEYS).length;
     var sum = STEP.slice(0, n - 1).reduce(function (a, b) { return a + b; }, 0) * 100;
     tower.style.height = "calc(100svh + " + sum + "svh)";
-    tower.style.height = "calc(100dvh + " + sum + "dvh)";
     // врезки: картинка кадра крупно, нужная точка — в центре рамки
     insets.forEach(function (el) {
       var at = el.getAttribute("data-at").split(",").map(Number), i = el.firstChild;
@@ -205,7 +204,6 @@ window.GI_BRAND = {
     });
   });
   finalEl.addEventListener("focusin", function () { if (!finalEl.classList.contains("is-in")) toEnd(false); });
-  hero.addEventListener("focusin", function () { if (hero.classList.contains("is-out")) window.scrollTo(0, tower.offsetTop); });
 
   /* ---------- шапка: бумажная после первого экрана, прячется при прокрутке вниз ---------- */
   var bar = document.querySelector(".topbar"), lastY = window.scrollY;

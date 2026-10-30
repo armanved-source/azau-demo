@@ -22,7 +22,7 @@
     { birds: 2, dir: 1 },
     { birds: 3, dir: -1, pool: [0.79, 0.65, 0.095, 0.04], drops: [[0.80, 0.62, 0.045, -0.04], [0.80, 0.62, 0.028, -0.028]] }
   ];
-  var FIG = [false, true, false, true, false, false];   // кадр 5 (помолодевший) — целиком: перерисованный человек не совпадает со старой маской, слой двоил папаху
+  var FIG = [false, true, false, false, false, false];   // кадр 5 (помолодевший) — целиком: перерисованный человек не совпадает со старой маской, слой двоил папаху
 
   function load(src, cb) {
     var s = document.createElement("script");

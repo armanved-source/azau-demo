@@ -182,6 +182,7 @@ window.GI_BRAND = {
     var fa = keys[Math.floor(f)], fb = keys[Math.min(n - 1, Math.ceil(f))];
     if (fa && fb && fa.k === fb.k) on = fa.k;          // две остановки одной подписи подряд — не мигаем
     if (on !== shown) {
+      if (on >= 0 && window.GI_SOUND) window.GI_SOUND.flip();   // новая остановка — шелест страницы
       shown = on;
       caps.forEach(function (c) {
         var k = +c.getAttribute("data-key");

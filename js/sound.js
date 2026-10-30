@@ -1,93 +1,77 @@
-/* Звук: ветер в горах и вода у источника, синтезом (Web Audio, без файлов). По умолчанию выключен — включается кнопкой
-   в левом нижнем углу (на телефоне — слева вверху). Ветер дышит порывами всю дорогу, вода слышна сильнее у кадров с источником и водопадом
-   (по камере js/main.js). У глотка — короткий всплеск. */
+/* Звук: тихий шелест перелистываемой страницы на каждой новой остановке истории (как книга) и лёгкая капля у глотка.
+   Синтез (Web Audio, без файлов), ничего не звучит постоянно. По умолчанию выключен — кнопка в левом нижнем углу
+   (на телефоне — слева вверху). main.js зовёт GI_SOUND.flip() при смене остановки и GI_SOUND.splash() у глотка. */
 (function () {
   "use strict";
   var AC = window.AudioContext || window.webkitAudioContext;
-  var T = window.GI_TOWER;
-  if (!AC || !T) return;
+  if (!AC) return;
 
   var btn = document.createElement("button");
   btn.className = "sound";
   btn.type = "button";
   btn.setAttribute("aria-pressed", "false");
-  btn.setAttribute("aria-label", "Звук гор: включить");
+  btn.setAttribute("aria-label", "Звук страниц: включить");
   btn.innerHTML = '<svg viewBox="0 0 32 20" aria-hidden="true"><path class="sound__w" d="M1 10 Q5 2 9 10 T17 10 T25 10 T31 10"/></svg><span>Звук</span>';
   var skip = document.querySelector(".skip");
   if (skip) skip.parentNode.insertBefore(btn, skip.nextSibling); else document.body.insertBefore(btn, document.body.firstChild);
 
-  var ctx, master, windG, waterG, windF, lfo, on = false, raf = 0, sleep = 0, lastLfo = 0;
-  function noise(sec) {
-    var b = ctx.createBuffer(1, ctx.sampleRate * sec, ctx.sampleRate), d = b.getChannelData(0), last = 0;
-    for (var i = 0; i < d.length; i++) { last = (last + 0.02 * (Math.random() * 2 - 1)) / 1.02; d[i] = last * 3.5; }   // бурый шум
-    var s = ctx.createBufferSource(); s.buffer = b; s.loop = true; return s;
-  }
-  function white(sec) {
-    var b = ctx.createBuffer(1, ctx.sampleRate * sec, ctx.sampleRate), d = b.getChannelData(0);
-    for (var i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
-    var s = ctx.createBufferSource(); s.buffer = b; s.loop = true; return s;
-  }
+  var ctx, master, on = false, sleep = 0, lastFlip = 0;
   function build() {
     ctx = new AC();
-    master = ctx.createGain(); master.gain.value = 0; master.connect(ctx.destination);
-    // ветер: низкий шум через полосовой фильтр, частота и громкость гуляют порывами
-    var w = noise(4); windF = ctx.createBiquadFilter(); windF.type = "bandpass"; windF.frequency.value = 420; windF.Q.value = 0.7;
-    windG = ctx.createGain(); windG.gain.value = 0.5;
-    w.connect(windF); windF.connect(windG); windG.connect(master); w.start();
-    // вода: светлый шум, выше по частоте
-    var r = white(3), wf = ctx.createBiquadFilter(); wf.type = "bandpass"; wf.frequency.value = 1800; wf.Q.value = 0.6;
-    var rip = ctx.createGain(); rip.gain.value = 0.6;                       // журчание: громкость дрожит 6–12 раз в секунду
-    var lg = ctx.createGain(); lfo = ctx.createOscillator(); lfo.frequency.value = 8; lg.gain.value = 0.35;
-    lfo.connect(lg); lg.connect(rip.gain); lfo.start();
-    var r2 = ctx.createBiquadFilter(); r2.type = "peaking"; r2.frequency.value = 3200; r2.gain.value = 6;
-    waterG = ctx.createGain(); waterG.gain.value = 0;
-    r.connect(wf); wf.connect(rip); rip.connect(r2); r2.connect(waterG); waterG.connect(master); r.start();
+    master = ctx.createGain(); master.gain.value = 0.9; master.connect(ctx.destination);
+  }
+  // белый шум нужной длины
+  function noise(sec) {
+    var b = ctx.createBuffer(1, Math.ceil(ctx.sampleRate * sec), ctx.sampleRate), d = b.getChannelData(0);
+    for (var i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+    var s = ctx.createBufferSource(); s.buffer = b; return s;
+  }
+  // шелест страницы: мягкий «вжух» бумаги (полоса шума скользит вверх) и короткий хлопок ложащегося листа
+  function flip() {
+    var t = ctx.currentTime, dur = 0.42;
+    var s = noise(dur + 0.1), f = ctx.createBiquadFilter(), g = ctx.createGain();
+    f.type = "bandpass"; f.Q.value = 0.9;
+    f.frequency.setValueAtTime(900, t); f.frequency.exponentialRampToValueAtTime(3200, t + dur * 0.7);
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(0.16, t + 0.08);
+    g.gain.exponentialRampToValueAtTime(0.05, t + dur * 0.75);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    s.connect(f); f.connect(g); g.connect(master); s.start(t); s.stop(t + dur + 0.05);
+    var c = noise(0.08), cf = ctx.createBiquadFilter(), cg = ctx.createGain(), tc = t + dur * 0.8;
+    cf.type = "lowpass"; cf.frequency.value = 1400;
+    cg.gain.setValueAtTime(0.0001, tc); cg.gain.exponentialRampToValueAtTime(0.09, tc + 0.008); cg.gain.exponentialRampToValueAtTime(0.0001, tc + 0.07);
+    c.connect(cf); cf.connect(cg); cg.connect(master); c.start(tc); c.stop(tc + 0.08);
   }
   function set(v) {
     on = v;
     if (on && !ctx) build();
     if (!ctx) return;
     clearTimeout(sleep);
-    if (on && ctx.state === "suspended") ctx.resume();
-    master.gain.setTargetAtTime(on ? 0.55 : 0, ctx.currentTime, 0.4);
-    if (on && !raf) raf = requestAnimationFrame(tick);
-    if (!on) sleep = setTimeout(function () { if (!on) ctx.suspend(); }, 1600);
+    if (on) { if (ctx.state === "suspended") ctx.resume(); flip(); }   // при включении — один шелест: слышно, что работает
+    else sleep = setTimeout(function () { if (!on) ctx.suspend(); }, 800);
     btn.setAttribute("aria-pressed", on ? "true" : "false");
-    btn.setAttribute("aria-label", on ? "Звук гор: выключить" : "Звук гор: включить");
+    btn.setAttribute("aria-label", on ? "Звук страниц: выключить" : "Звук страниц: включить");
     btn.classList.toggle("is-on", on);
   }
   btn.addEventListener("click", function () { set(!on); });
-  // вкладку спрятали — звук на паузу, вернулись — дальше
   document.addEventListener("visibilitychange", function () {
     if (!ctx) return;
     if (document.hidden) ctx.suspend(); else if (on) ctx.resume();
   });
 
-  // вода громче у источника (кадр 3 — глоток, кадр 5 — источник наверху, переход-водопад между ними)
-  function waterAt(y) {
-    var F = T.FRAMES, near = 0;
-    [2, 4].forEach(function (i) { if (F[i]) near = Math.max(near, 1 - Math.min(1, Math.abs(F[i].y + T.FH / 2 - y) / 0.6)); });
-    var c = T.CLOUDS[3]; if (c) near = Math.max(near, 0.7 * (1 - Math.min(1, Math.abs(c.y - y) / 0.4)));
-    return near;
-  }
-  function tick(now) {
-    raf = 0;
-    if (!ctx || !on) return;
-    raf = requestAnimationFrame(tick);
-    var t = now / 1000, gust = 0.55 + 0.45 * Math.max(0, Math.sin(t * 0.53) * 0.6 + Math.sin(t * 1.31 + 1.7) * 0.4);
-    windF.frequency.setTargetAtTime(300 + 380 * gust, ctx.currentTime, 0.3);
-    windG.gain.setTargetAtTime(0.25 + 0.35 * gust, ctx.currentTime, 0.3);
-    if (now - lastLfo > 250) { lastLfo = now; lfo.frequency.setTargetAtTime(6 + 6 * Math.random(), ctx.currentTime, 0.2); }
-    waterG.gain.setTargetAtTime(0.03 + 0.5 * waterAt(T.cam.y), ctx.currentTime, 0.4);
-  }
-  // всплеск у глотка: короткий шум с падающим фильтром
   window.GI_SOUND = {
+    flip: function () {
+      if (!ctx || !on || document.hidden) return;
+      var now = performance.now(); if (now - lastFlip < 350) return; lastFlip = now;   // быстрая прокрутка — не трещим
+      flip();
+    },
+    // капля у глотка: тихий «плюх» в чашу
     splash: function () {
       if (!ctx || !on) return;
-      var s = noise(1), f = ctx.createBiquadFilter(), g = ctx.createGain(), t = ctx.currentTime;
-      f.type = "bandpass"; f.Q.value = 2; f.frequency.setValueAtTime(2600, t); f.frequency.exponentialRampToValueAtTime(500, t + 0.7);
-      g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(0.9, t + 0.04); g.gain.exponentialRampToValueAtTime(0.001, t + 0.9);
-      s.connect(f); f.connect(g); g.connect(master); s.start(t); s.stop(t + 1);
+      var t = ctx.currentTime, o = ctx.createOscillator(), g = ctx.createGain();
+      o.type = "sine"; o.frequency.setValueAtTime(1300, t); o.frequency.exponentialRampToValueAtTime(420, t + 0.18);
+      g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.18, t + 0.01); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.3);
+      o.connect(g); g.connect(master); o.start(t); o.stop(t + 0.32);
     }
   };
 })();

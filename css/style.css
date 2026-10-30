@@ -209,6 +209,7 @@ html:not(.js) .hero{position:relative;left:auto;right:auto;top:auto;bottom:auto;
 .music svg{width:26px;height:16px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round}
 .music .music__w{stroke-dasharray:3 4}
 .music.is-on .music__w{stroke-dasharray:none;animation:wave 1.2s linear infinite}
+.music.is-loading{opacity:.6}
 @keyframes wave{to{transform:translateX(-8px)}}
 body:has(.final.is-in) .music{opacity:0;pointer-events:none;visibility:hidden;transition:opacity .4s,visibility 0s .4s}
 @media (max-width:700px){.music{left:20px;bottom:auto;top:68px;padding:7px 10px;min-height:44px}}

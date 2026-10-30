@@ -47,8 +47,6 @@ a{color:inherit}
 /* ---------- путь в гору: кадры друг над другом, камера (js/main.js) двигает «мир» внутри закреплённого экрана ---------- */
 .tower{position:relative;height:100svh}
 .tower__stick{position:sticky;top:0;height:100vh;height:100svh;height:100dvh;overflow:hidden;container-type:size;isolation:isolate;background:var(--paper)}
-/* рамка страницы комикса, как у Santioni: бумажное поле и жирная линия тушью поверх всего кадра */
-.tower__stick::after{content:"";position:absolute;inset:0;z-index:4;pointer-events:none;border:clamp(8px,1.1vw,16px) solid var(--paper);box-shadow:inset 0 0 0 3px var(--ink)}
 .tower__world{position:absolute;left:0;top:0;transform-origin:0 0;will-change:transform}
 .tower__img,.tower__cloud{position:absolute;max-width:none}
 /* живая гравюра (js/live.js) поверх картинок; пока не готова — видны картинки. Бутылка — слоем выше холста */

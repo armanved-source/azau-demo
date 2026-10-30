@@ -373,7 +373,7 @@
       var any = false;
       frames.forEach(function (it) {
         var d = Math.abs(it.f.y + FH / 2 - cam.y);       // от центра кадра до камеры
-        if (d < FH + 0.3) want(it, now); else if (d > 2 * (FH + 0.2)) free(it);   // держим текущий кадр и соседей
+        if (d < FH + 0.7) want(it, now); else if (d > 2 * (FH + 0.4)) free(it);   // соседей грузим заранее, не во время свайпа
         var vis = it.ready && d < FH + cam.h / 2;
         it.bg.visible = vis;
         if (it.fg) it.fg.visible = vis;

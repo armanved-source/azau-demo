@@ -81,7 +81,7 @@ window.GI_BRAND = {
   var insets = Array.prototype.slice.call(tower.querySelectorAll(".inset"));
   var narrow = window.matchMedia("(max-width: 700px)");
   var cam = { x: 0.5, y: FH / 2, h: FH, w: 1, vy: 0 };
-  var shown = -1, last = 0;
+  var shown = -1, last = 0, Hs = 0, fs = null, fv = 0, narrowWas = null;
 
   // DOM-мир: кадры и облака картинками — видны, пока не готов WebGL, и если его нет
   function top(y) { return (TH - y) * U; }              // y мира (снизу) -> px сверху
@@ -151,16 +151,21 @@ window.GI_BRAND = {
   // один шаг камеры; js/live.js зовёт его сам перед отрисовкой (иначе холст и бутылка разъезжаются на кадр)
   function step(now) {
     var keys = narrow.matches ? KEYS_PHONE : KEYS, n = keys.length;
-    var W = stick.clientWidth, H = stick.clientHeight;
-    if (!W || !H) return cam;                           // ещё не разложено
+    var W = stick.clientWidth, H0 = stick.clientHeight;
+    if (!W || !H0) return cam;                          // ещё не разложено
     var r = tower.getBoundingClientRect();
-    var p = clamp(-r.top / Math.max(1, r.height - H), 0, 1);
-    var f = toStop(p, n);
-    var g = target(keys, f);
-    var dt = Math.min(0.1, Math.max(0, (now - last) / 1000)); last = now;
-    var k = reduce || !dt ? 1 : 1 - Math.exp(-dt * 7);  // инерция: камера догоняет прокрутку мягко
+    var p = clamp(-r.top / Math.max(1, r.height - H0), 0, 1);
+    var ft = toStop(p, n);
+    var dt = Math.min(0.05, Math.max(0, (now - last) / 1000)); last = now;
+    // камера на «пружине» вдоль пути: положение по прокрутке догоняется без скачков скорости — свайп не дёргает
+    if (reduce || !dt || fs === null || narrowWas !== narrow.matches) { fs = ft; fv = 0; narrowWas = narrow.matches; }
+    else { var om = 7; fv += (om * om * (ft - fs) - 2 * om * fv) * dt; fs += fv * dt; }
+    var f = clamp(fs, 0, n - 1);
+    var g = target(keys, clamp(f, 0, n - 1));
+    // высота экрана на телефоне скачет, когда прячется адресная строка — камера меняет её плавно
+    Hs = Hs && !reduce ? Hs + (H0 - Hs) * (dt ? 1 - Math.exp(-dt * 3) : 1) : H0; var H = Hs;
     var oy = cam.y;
-    cam.x += (g.x - cam.x) * k; cam.y += (g.y - cam.y) * k; cam.h += (g.h - cam.h) * k;
+    cam.x = g.x; cam.y = g.y; cam.h = g.h;
     // кадр не шире мира и не выходит за его края
     var h = Math.min(cam.h, H / W), w = h * W / H;
     cam.x = clamp(cam.x, w / 2, 1 - w / 2);

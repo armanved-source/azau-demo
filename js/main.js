@@ -187,7 +187,6 @@ window.GI_BRAND = {
     var fa = keys[Math.floor(f)], fb = keys[Math.min(n - 1, Math.ceil(f))];
     if (fa && fb && fa.k === fb.k) on = fa.k;          // две остановки одной подписи подряд — не мигаем
     if (on !== shown) {
-      if (on >= 0 && window.GI_SOUND) window.GI_SOUND.flip();   // новая остановка — шелест страницы
       shown = on;
       caps.forEach(function (c) {
         var k = +c.getAttribute("data-key");
@@ -205,7 +204,6 @@ window.GI_BRAND = {
   function gulp(x, y) {
     gulpEl.style.setProperty("--gx", Math.round(x) + "px"); gulpEl.style.setProperty("--gy", Math.round(y) + "px");
     gulpEl.classList.remove("is-on"); void gulpEl.offsetWidth; gulpEl.classList.add("is-on");
-    if (window.GI_SOUND) window.GI_SOUND.splash();
   }
   window.GI_TOWER = { step: step, cam: cam, FRAMES: FRAMES, CLOUDS: CLOUDS, FH: FH, TH: TH, narrow: narrow, ext: false };
   function loop(now) {

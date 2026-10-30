@@ -115,7 +115,6 @@
       "  vec2 p = base(vS);",
       "  vec4 a0 = tx(tAux, p);",
       "  p -= uPar * (a0.r - 0.35);",                                  // дальнее почти стоит, ближнее едет
-      "  p.x -= (0.004 * sin(uTime * 0.07 + uSeed) + 0.0015 * uGust) * (1.0 - smoothstep(0.0, 0.12, a0.r));",   // облака
       "  p += wind(p, tx(tAux, p).a);",
       "  p = clamp(p, 0.0005, 0.9995);",
       "  vec4 a = tx(tAux, p);",

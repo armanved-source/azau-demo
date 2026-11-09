@@ -13,6 +13,12 @@ window.GI_BRAND = {
   var root = document.documentElement;
   var reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
+  /* ---------- всегда с первого кадра: браузер не возвращает на место прошлого просмотра ---------- */
+  if ("scrollRestoration" in history) history.scrollRestoration = "manual";
+  function toTop() { if (!location.hash) window.scrollTo(0, 0); }
+  toTop();
+  window.addEventListener("pageshow", toTop);   // и при возврате «назад» из кэша страницы
+
   root.classList.add("js");
 
   function clamp(v, a, b) { return Math.max(a, Math.min(b, v)); }
@@ -267,12 +273,38 @@ window.GI_BRAND = {
   /* ---------- заставка ---------- */
   var intro = document.querySelector(".intro");
   if (intro) {
-    var t0 = Date.now(), done = false;
-    var go = function () {
+    // Заставка стоит, пока человек не начнёт листать (или не нажмёт); потом растворяется в облаках.
+    // Со ссылки с якорем и при «уменьшить движение» — уходит сама, как раньше.
+    var t0 = Date.now(), done = false, auto = reduce || !!location.hash;
+    var SCROLL_KEYS = { " ": 1, PageDown: 1, ArrowDown: 1, End: 1, Enter: 1 };
+    var leave = function () {
       if (done) return; done = true;
-      setTimeout(function () { intro.classList.add("is-out"); setTimeout(function () { intro.remove(); }, 900); }, reduce ? 0 : Math.max(0, 1100 - (Date.now() - t0)));
+      root.classList.remove("intro-lock");
+      ["wheel", "touchmove", "keydown", "click", "focusin"].forEach(function (t) { window.removeEventListener(t, onAct, { passive: false }); });
+      if (reduce) { intro.remove(); return; }
+      intro.classList.remove("is-wait");
+      intro.classList.add("is-out");
+      setTimeout(function () { intro.classList.add("is-gone"); }, 950);
+      setTimeout(function () { intro.remove(); }, 2500);
     };
-    var first = new Image(); first.onload = first.onerror = go; first.src = "assets/scene-02.webp";
-    setTimeout(go, 3500);
+    var onAct = function (e) {
+      if (e.type === "keydown" && !SCROLL_KEYS[e.key] && e.key !== "Tab") return;
+      if (e.cancelable && e.type !== "keydown") e.preventDefault();   // первый жест только убирает заставку
+      if (e.type === "keydown" && SCROLL_KEYS[e.key]) e.preventDefault();
+      leave();
+    };
+    var ready = function () { setTimeout(function () { intro.classList.add("is-ready"); }, Math.max(0, 1200 - (Date.now() - t0))); };
+    if (auto) {
+      var first = new Image(); first.onload = first.onerror = function () { setTimeout(leave, reduce ? 0 : Math.max(0, 1100 - (Date.now() - t0))); };
+      first.src = "assets/scene-02.webp";
+      setTimeout(leave, 3500);
+    } else {
+      root.classList.add("intro-lock");
+      intro.classList.add("is-wait");
+      // focusin — скринридер или Tab перешли к ссылке; через 15 с заставка уходит сама, чтобы никто не застрял
+      ["wheel", "touchmove", "keydown", "click", "focusin"].forEach(function (t) { window.addEventListener(t, onAct, { passive: false }); });
+      setTimeout(leave, 15000);
+      var img1 = new Image(); img1.onload = img1.onerror = ready; img1.src = "assets/scene-02.webp";
+    }
   }
 })();

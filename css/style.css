@@ -150,7 +150,7 @@ html:not(.js) .hero{position:relative;left:auto;right:auto;top:auto;bottom:auto;
   .hero__kicker{font-size:.64rem;margin-bottom:.8rem}
   .cap{left:20px;right:auto;max-width:calc(100cqw - 48px);font-size:1.2rem;box-shadow:0 0 0 4px var(--paper),0 0 0 5px var(--ink);padding:.9em 1.05em 1em}
   .tower .cap{top:auto;bottom:24px}
-  .inset,.inset--l{width:40cqw;left:auto;right:20px;top:auto;bottom:150px}
+  .inset,.inset--l{width:40cqw;left:auto;right:20px;top:auto;bottom:168px}   /* выше трёхстрочной подписи (123px + 24px низ + рамки обеих плашек): рамки не ложатся друг на друга */
   .final__inner{grid-template-columns:1fr;justify-items:center;text-align:left}
   .final{padding:64px 20px 28px}
   .final__inner{gap:18px}

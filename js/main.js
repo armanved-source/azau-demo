@@ -264,6 +264,7 @@ window.GI_BRAND = {
   Array.prototype.forEach.call(document.querySelectorAll(".bottle"), setupBottle);
   layout();
   step(performance.now());                              // первый экран сразу на месте, не ждём кадра
+  if (location.hash === "#final") toEnd(false);         // прямая ссылка на финал: он внутри закреплённого экрана, якорь сам туда не довозит
   narrow.addEventListener ? narrow.addEventListener("change", layout) : narrow.addListener(layout);
   window.addEventListener("resize", layout);
   if (bar) window.addEventListener("scroll", topbar, { passive: true });
